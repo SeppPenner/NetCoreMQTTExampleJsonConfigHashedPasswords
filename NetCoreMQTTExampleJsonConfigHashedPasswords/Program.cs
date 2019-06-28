@@ -101,7 +101,7 @@
 
                             foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
                             {
-                                var doesTopicMatch = TopicChecker.TopicMatch(forbiddenTopic, topic);
+                                var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
                                 if (doesTopicMatch)
                                 {
                                     c.AcceptSubscription = false;
@@ -111,7 +111,7 @@
 
                             foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
                             {
-                                var doesTopicMatch = TopicChecker.TopicMatch(allowedTopic, topic);
+                                var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
                                 if (doesTopicMatch)
                                 {
                                     c.AcceptSubscription = true;
@@ -147,7 +147,7 @@
 
                             foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
                             {
-                                var doesTopicMatch = TopicChecker.TopicMatch(forbiddenTopic, topic);
+                                var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
                                 if (doesTopicMatch)
                                 {
                                     c.AcceptPublish = false;
@@ -157,7 +157,7 @@
 
                             foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
                             {
-                                var doesTopicMatch = TopicChecker.TopicMatch(allowedTopic, topic);
+                                var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
                                 if (doesTopicMatch)
                                 {
                                     c.AcceptPublish = true;
