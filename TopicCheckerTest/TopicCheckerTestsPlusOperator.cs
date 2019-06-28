@@ -1,5 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NetCoreMQTTExampleJsonConfigHashedPasswords;
+using NetCoreMQTTExampleJsonConfig;
 
 namespace TopicCheckerTest
 {
@@ -15,7 +15,7 @@ namespace TopicCheckerTest
         [TestMethod]
         public void CheckSingleValuePlusMatch()
         {
-            var result = TopicChecker.TopicMatch("a/+", "a/b");
+            var result = TopicChecker.Regex("a/+", "a/b");
             Assert.IsTrue(result);
         }
 
@@ -25,7 +25,7 @@ namespace TopicCheckerTest
         [TestMethod]
         public void CheckSingleValuePlusDontMatch()
         {
-            var result = TopicChecker.TopicMatch("a/+", "a/b/c");
+            var result = TopicChecker.Regex("a/+", "a/b/c");
             Assert.IsFalse(result);
         }
 
@@ -35,7 +35,7 @@ namespace TopicCheckerTest
         [TestMethod]
         public void CheckSingleValuePlusMatchWithPlus()
         {
-            var result = TopicChecker.TopicMatch("a/+", "a/+");
+            var result = TopicChecker.Regex("a/+", "a/+");
             Assert.IsTrue(result);
         }
 
@@ -45,7 +45,7 @@ namespace TopicCheckerTest
         [TestMethod]
         public void CheckSingleValuePlusDontMatchWithCross()
         {
-            var result = TopicChecker.TopicMatch("a/+", "a/#");
+            var result = TopicChecker.Regex("a/+", "a/#");
             Assert.IsFalse(result);
         }
     }
