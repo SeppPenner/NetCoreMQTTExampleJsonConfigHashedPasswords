@@ -1,5 +1,5 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NetCoreMQTTExampleJsonConfig;
+using NetCoreMQTTExampleJsonConfigHashedPasswords;
 
 namespace TopicCheckerTest
 {
