@@ -29,5 +29,10 @@
         /// Gets or sets the publish topic lists.
         /// </summary>
         public TopicTuple PublishTopicLists { get; set; } = new TopicTuple();
+
+        /// <summary>
+        /// Gets or sets the client identifier prefix (This can be used to allow several client identifiers with the same prefix for one username / password combination).
+        /// </summary>
+        public string ClientIdPrefix { get; set; }
     }
 }

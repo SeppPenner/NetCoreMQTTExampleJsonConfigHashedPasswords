@@ -29,6 +29,35 @@
           "f/#"
         ]
       }
+    },
+    {
+      "UserName": "Hans2",
+      "Password": "AQAAAAEAACcQAAAAECcnkwU+LImyVorjCCNzpTGgYOjVxFd+i/PW3MyU2sws80uPkPrppb+AXnvaxVI/0Q==",
+      "ClientIdPrefix": "Test_",
+      "SubscriptionTopicLists": {
+        "BlacklistTopics": [
+          "g",
+          "h/+",
+          "i/#"
+        ],
+        "WhitelistTopics": [
+          "j",
+          "k/+",
+          "l/#"
+        ]
+      },
+      "PublishTopicLists": {
+        "BlacklistTopics": [
+          "g",
+          "h/+",
+          "i/#"
+        ],
+        "WhitelistTopics": [
+          "j",
+          "k/+",
+          "l/#"
+        ]
+      }
     }
   ]
 }
