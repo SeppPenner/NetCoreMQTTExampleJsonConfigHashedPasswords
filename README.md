@@ -16,6 +16,11 @@ The project was written and tested in .NetCore 2.2.
 2. Add the passwords and other data to the config.json file.
 
 ## JSON configuration (Adjust this to your needs):
+
+Users can be defined in two different ways (The ways can be combined making sure that the client ids and client id prefixes need to be distinct for all of them, of course):
+
+### Exact definition (Matching exactly one client id):
+
 ```json
 {
   "Port": 8883,
@@ -53,8 +58,46 @@ The project was written and tested in .NetCore 2.2.
 }
 ```
 
+### Various definition (Matching multiple client ids for one username and password combination):
+
+```json
+{
+  "Port": 8883,
+  "Users": [
+    {
+      "UserName": "Hans2",
+      "Password": "AQAAAAEAACcQAAAAECcnkwU+LImyVorjCCNzpTGgYOjVxFd+i/PW3MyU2sws80uPkPrppb+AXnvaxVI/0Q==",
+      "ClientIdPrefix": "Test_",
+      "SubscriptionTopicLists": {
+        "BlacklistTopics": [
+          "g",
+          "h/+",
+          "i/#"
+        ],
+        "WhitelistTopics": [
+          "j",
+          "k/+",
+          "l/#"
+        ]
+      },
+      "PublishTopicLists": {
+        "BlacklistTopics": [
+          "g",
+          "h/+",
+          "i/#"
+        ],
+        "WhitelistTopics": [
+          "j",
+          "k/+",
+          "l/#"
+        ]
+      }
+    }
+  ]
+}
+```
+
 ## Attention:
-* The project only works properly when the ClientId is properly set in the clients (and in the config.json, of course).
 * Only the following [UTF-8](https://www.utf8-chartable.de/unicode-utf8-table.pl) chars are supported for topics:
 
 |Unicode code point|character|UTF-8(hex.)|Name|
@@ -248,11 +291,12 @@ The project was written and tested in .NetCore 2.2.
 |U+00FE|`þ`|c3 be|LATIN SMALL LETTER THORN|
 |U+00FF|`ÿ`|c3 bf|LATIN SMALL LETTER Y WITH DIAERESIS|
 
-## Password and Hash sample:
+## Password and Hash examples:
 
 |Password|Hash|
 |-|-|
 |Test|AQAAAAEAACcQAAAAEKsbxxvBm/peZayW9Qmo9Rd1tRF4SLX4CQ6pNSrDSmCMWYf7o8Iy2pZCTA+No0fB8Q==|
+|Test|AQAAAAEAACcQAAAAECcnkwU+LImyVorjCCNzpTGgYOjVxFd+i/PW3MyU2sws80uPkPrppb+AXnvaxVI/0Q==|
 
 ## Create an openssl certificate:
 ```bash
@@ -265,4 +309,4 @@ An example certificate is in the folder. Password for all is `test`.
 Change history
 --------------
 
-* **Version 1.0.0.0 (2019-06-28)** : 1.0 release.
+* **Version 1.0.0.0 (2019-07-14)** : 1.0 release.
