@@ -1,4 +1,4 @@
-﻿namespace NetCoreMQTTExampleJsonConfigHashedPasswords
+namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
     using System;
 
