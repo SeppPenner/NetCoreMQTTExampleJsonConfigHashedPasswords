@@ -309,4 +309,5 @@ An example certificate is in the folder. Password for all is `test`.
 Change history
 --------------
 
+* **Version 1.0.1.0 (2019-08-22)** : Updated MQTTnet to 3.0.8.
 * **Version 1.0.0.0 (2019-07-14)** : 1.0 release.
