@@ -1,21 +1,21 @@
 namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
     using System;
-
-    using MQTTnet;
-    using MQTTnet.Protocol;
-    using MQTTnet.Server;
-
-    using Newtonsoft.Json;
-
+    using System.Collections.Generic;
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
     using System.Reflection;
     using System.Security.Authentication;
     using System.Security.Cryptography.X509Certificates;
+
     using Hashing;
-    using System.Collections.Generic;
+
+    using MQTTnet;
+    using MQTTnet.Protocol;
+    using MQTTnet.Server;
+
+    using Newtonsoft.Json;
 
     /// <summary>
     ///     The main program.
@@ -30,7 +30,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         /// <summary>
         /// The client identifier prefixes that are currently used.
         /// </summary>
-        private static List<string> clientIdPrefixesUsed = new List<string>();
+        private static readonly List<string> ClientIdPrefixesUsed = new List<string>();
 
         /// <summary>
         ///     The main method that starts the service.
@@ -51,7 +51,8 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
             var config = ReadConfiguration(currentPath);
 
             var optionsBuilder = new MqttServerOptionsBuilder()
-                //.WithDefaultEndpoint().WithDefaultEndpointPort(1883) // For testing purposes only
+                //// .WithDefaultEndpoint().WithDefaultEndpointPort(1883) // For testing purposes only
+                .WithoutDefaultEndpoint()
                 .WithEncryptedEndpoint().WithEncryptedEndpointPort(config.Port)
                 .WithEncryptionCertificate(certificate.Export(X509ContentType.Pfx))
                 .WithEncryptionSslProtocol(SslProtocols.Tls12).WithConnectionValidator(
@@ -86,16 +87,14 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                                     c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
                                     return;
                                 }
-                                else
-                                {
-                                    c.SessionItems.Add(currentUser.ClientId, currentUser);
-                                }
+
+                                c.SessionItems.Add(currentUser.ClientId, currentUser);
                             }
                             else
                             {
-                                if (!clientIdPrefixesUsed.Contains(currentUser.ClientIdPrefix))
+                                if (!ClientIdPrefixesUsed.Contains(currentUser.ClientIdPrefix))
                                 {
-                                    clientIdPrefixesUsed.Add(currentUser.ClientIdPrefix);
+                                    ClientIdPrefixesUsed.Add(currentUser.ClientIdPrefix);
                                 }
 
                                 c.SessionItems.Add(currentUser.ClientIdPrefix, currentUser);
@@ -106,17 +105,17 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                     c =>
                         {
                             var clientIdPrefix = GetClientIdPrefix(c.ClientId);
-                            User currentUser = null;
+                            User currentUser;
                             bool userFound;
 
                             if (clientIdPrefix == null)
                             {
-                                userFound = c.SessionItems.TryGetValue(c.ClientId, out object currentUserObject);
+                                userFound = c.SessionItems.TryGetValue(c.ClientId, out var currentUserObject);
                                 currentUser = currentUserObject as User;
                             }
                             else
                             {
-                                userFound = c.SessionItems.TryGetValue(clientIdPrefix, out object currentUserObject);
+                                userFound = c.SessionItems.TryGetValue(clientIdPrefix, out var currentUserObject);
                                 currentUser = currentUserObject as User;
                             }
 
@@ -143,21 +142,25 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
                             {
                                 var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
-                                if (doesTopicMatch)
+                                if (!doesTopicMatch)
                                 {
-                                    c.AcceptSubscription = false;
-                                    return;
+                                    continue;
                                 }
+
+                                c.AcceptSubscription = false;
+                                return;
                             }
 
                             foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
                             {
                                 var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
-                                if (doesTopicMatch)
+                                if (!doesTopicMatch)
                                 {
-                                    c.AcceptSubscription = true;
-                                    return;
+                                    continue;
                                 }
+
+                                c.AcceptSubscription = true;
+                                return;
                             }
 
                             c.AcceptSubscription = false;
@@ -165,17 +168,17 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                     c =>
                         {
                             var clientIdPrefix = GetClientIdPrefix(c.ClientId);
-                            User currentUser = null;
+                            User currentUser;
                             bool userFound;
 
                             if (clientIdPrefix == null)
                             {
-                                userFound = c.SessionItems.TryGetValue(c.ClientId, out object currentUserObject);
+                                userFound = c.SessionItems.TryGetValue(c.ClientId, out var currentUserObject);
                                 currentUser = currentUserObject as User;
                             }
                             else
                             {
-                                userFound = c.SessionItems.TryGetValue(clientIdPrefix, out object currentUserObject);
+                                userFound = c.SessionItems.TryGetValue(clientIdPrefix, out var currentUserObject);
                                 currentUser = currentUserObject as User;
                             }
 
@@ -187,36 +190,40 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 
                             var topic = c.ApplicationMessage.Topic;
 
-                            if (currentUser.SubscriptionTopicLists.BlacklistTopics.Contains(topic))
+                            if (currentUser.PublishTopicLists.BlacklistTopics.Contains(topic))
                             {
                                 c.AcceptPublish = false;
                                 return;
                             }
 
-                            if (currentUser.SubscriptionTopicLists.WhitelistTopics.Contains(topic))
+                            if (currentUser.PublishTopicLists.WhitelistTopics.Contains(topic))
                             {
                                 c.AcceptPublish = true;
                                 return;
                             }
 
-                            foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
+                            foreach (var forbiddenTopic in currentUser.PublishTopicLists.BlacklistTopics)
                             {
                                 var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
-                                if (doesTopicMatch)
+                                if (!doesTopicMatch)
                                 {
-                                    c.AcceptPublish = false;
-                                    return;
+                                    continue;
                                 }
+
+                                c.AcceptPublish = false;
+                                return;
                             }
 
-                            foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
+                            foreach (var allowedTopic in currentUser.PublishTopicLists.WhitelistTopics)
                             {
                                 var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
-                                if (doesTopicMatch)
+                                if (!doesTopicMatch)
                                 {
-                                    c.AcceptPublish = true;
-                                    return;
+                                    continue;
                                 }
+
+                                c.AcceptPublish = true;
+                                return;
                             }
 
                             c.AcceptPublish = false;
@@ -228,13 +235,13 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         }
 
         /// <summary>
-        /// Gets the client id prefix for a client id if there is one or <see cref="null"/> else.
+        /// Gets the client id prefix for a client id if there is one or <c>null</c> else.
         /// </summary>
         /// <param name="clientId">The client id.</param>
-        /// <returns>The client id prefix for a client id if there is one or <see cref="null"/> else.</returns>
+        /// <returns>The client id prefix for a client id if there is one or <c>null</c> else.</returns>
         private static string GetClientIdPrefix(string clientId)
         {
-            foreach (var clientIdPrefix in clientIdPrefixesUsed)
+            foreach (var clientIdPrefix in ClientIdPrefixesUsed)
             {
                 if (clientId.StartsWith(clientIdPrefix))
                 {
@@ -252,24 +259,22 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         /// <returns>A <see cref="Config"/> object.</returns>
         private static Config ReadConfiguration(string currentPath)
         {
-            Config config = new Config();
+            var config = new Config();
 
             var filePath = $"{currentPath}\\config.json";
 
-            if (File.Exists(filePath))
+            if (!File.Exists(filePath))
             {
-                using (var r = new StreamReader(filePath))
-                {
-                    var json = r.ReadToEnd();
-                    config = JsonConvert.DeserializeObject<Config>(json);
-                }
+                return config;
+            }
 
-                return config;
-            }
-            else
+            using (var r = new StreamReader(filePath))
             {
-                return config;
+                var json = r.ReadToEnd();
+                config = JsonConvert.DeserializeObject<Config>(json);
             }
+
+            return config;
         }
     }
 }

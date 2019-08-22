@@ -1,7 +1,8 @@
 ﻿namespace CreateHashes
 {
-    using Hashing;
     using System;
+
+    using Hashing;
 
     /// <summary>
     /// This program can be used to generate hashes from a certain password to use in the config.json file.

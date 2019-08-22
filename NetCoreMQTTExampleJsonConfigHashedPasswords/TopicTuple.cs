@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
-
-namespace NetCoreMQTTExampleJsonConfigHashedPasswords
+﻿namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
+    using System.Collections.Generic;
+
     /// <summary>
     /// The <see cref="TopicTuple" /> read from the config.json file.
     /// </summary>

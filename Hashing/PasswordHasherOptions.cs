@@ -1,16 +1,27 @@
-﻿// Copyright (c) .NET Foundation. All rights reserved.
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="PasswordHasherOptions.cs" company=".NET Foundation.">
+// Copyright (c) .NET Foundation. All rights reserved.
 // Licensed under the Apache License, Version 2.0. See ApacheLicense.txt in the project root for license information.
+// </copyright>
+// <summary>
+//   Specifies options for password hashing.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
-using System.Security.Cryptography;
 
 namespace Hashing
 {
+    using System.Security.Cryptography;
+
     /// <summary>
     /// Specifies options for password hashing.
     /// </summary>
     public class PasswordHasherOptions
     {
-        private static readonly RandomNumberGenerator _defaultRng = RandomNumberGenerator.Create(); // secure PRNG
+        /// <summary>
+        /// The default random number generator.
+        /// </summary>
+        private static readonly RandomNumberGenerator DefaultRng = RandomNumberGenerator.Create();
 
         /// <summary>
         /// Gets or sets the compatibility mode used when hashing passwords. Defaults to 'ASP.NET Identity version 3'.
@@ -32,7 +43,9 @@ namespace Hashing
         /// </remarks>
         public int IterationCount { get; set; } = 10000;
 
-        // for unit testing
-        internal RandomNumberGenerator Rng { get; set; } = _defaultRng;
+        /// <summary>
+        /// Gets or sets the internal random number generator. For unit testing.
+        /// </summary>
+        internal RandomNumberGenerator Rng { get; set; } = DefaultRng;
     }
 }

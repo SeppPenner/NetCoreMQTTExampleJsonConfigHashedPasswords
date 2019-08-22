@@ -1,8 +1,9 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NetCoreMQTTExampleJsonConfigHashedPasswords;
-
 namespace TopicCheckerTest
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    using NetCoreMQTTExampleJsonConfigHashedPasswords;
+
     /// <summary>
     /// A test class to test the <see cref="TopicCheckerTest"/> with the + operator.
     /// </summary>
