@@ -48,8 +48,11 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
             var config = ReadConfiguration(currentPath);
 
             var optionsBuilder = new MqttServerOptionsBuilder()
-                //// .WithDefaultEndpoint().WithDefaultEndpointPort(1883) // For testing purposes only
+#if DEBUG
+                .WithDefaultEndpoint().WithDefaultEndpointPort(1883)
+#else
                 .WithoutDefaultEndpoint()
+#endif
                 .WithEncryptedEndpoint().WithEncryptedEndpointPort(config.Port)
                 .WithEncryptionCertificate(certificate.Export(X509ContentType.Pfx))
                 .WithEncryptionSslProtocol(SslProtocols.Tls12).WithConnectionValidator(
