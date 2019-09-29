@@ -1,7 +1,7 @@
-﻿namespace NetCoreMQTTExampleJsonConfigHashedPasswords
-{
-    using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
+namespace NetCoreMQTTExampleJsonConfigHashedPasswords
+{
     /// <summary>
     ///     The <see cref="Config" /> read from the config.json file.
     /// </summary>

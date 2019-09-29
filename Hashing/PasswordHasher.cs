@@ -8,12 +8,12 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
+
 namespace Hashing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Security.Cryptography;
-
     /// <summary>
     ///     Implements the standard password hashing.
     /// </summary>
@@ -24,30 +24,30 @@ namespace Hashing
          * =======================
          * 
          * Version 2:
-         * PBKDF2 with HMAC-SHA1, 128-bit salt, 256-bit subkey, 1000 iterations.
+         * PBKDF2 with HMAC-SHA1, 128-bit salt, 256-bit sub key, 1000 iterations.
          * (See also: SDL crypto guidelines v5.1, Part III)
-         * Format: { 0x00, salt, subkey }
+         * Format: { 0x00, salt, sub key }
          *
          * Version 3:
-         * PBKDF2 with HMAC-SHA256, 128-bit salt, 256-bit subkey, 10000 iterations.
-         * Format: { 0x01, prf (UInt32), iter count (UInt32), salt length (UInt32), salt, subkey }
+         * PBKDF2 with HMAC-SHA256, 128-bit salt, 256-bit sub key, 10000 iterations.
+         * Format: { 0x01, prf (UInt32), iter count (UInt32), salt length (UInt32), salt, sub key }
          * (All UInt32s are stored big-endian.)
          */
 
         /// <summary>
         ///     The password hasher compatibility mode.
         /// </summary>
-        private readonly PasswordHasherCompatibilityMode compatibilityMode;
+        private readonly PasswordHasherCompatibilityMode _compatibilityMode;
 
         /// <summary>
         ///     The iteration count.
         /// </summary>
-        private readonly int iterCount;
+        private readonly int _iterCount;
 
         /// <summary>
         ///     The random number generator.
         /// </summary>
-        private readonly RandomNumberGenerator rng;
+        private readonly RandomNumberGenerator _rng;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="PasswordHasher" /> class.
@@ -56,19 +56,17 @@ namespace Hashing
         {
             var options = new PasswordHasherOptions();
 
-            this.compatibilityMode = options.CompatibilityMode;
-            switch (this.compatibilityMode)
+            _compatibilityMode = options.CompatibilityMode;
+            switch (_compatibilityMode)
             {
                 case PasswordHasherCompatibilityMode.IdentityV2:
                     // nothing else to do
                     break;
 
                 case PasswordHasherCompatibilityMode.IdentityV3:
-                    this.iterCount = options.IterationCount;
-                    if (this.iterCount < 1)
-                    {
+                    _iterCount = options.IterationCount;
+                    if (_iterCount < 1)
                         throw new InvalidOperationException("The iteration count must be a positive integer.");
-                    }
 
                     break;
 
@@ -76,7 +74,7 @@ namespace Hashing
                     throw new InvalidOperationException("The provided PasswordHasherCompatibilityMode is invalid.");
             }
 
-            this.rng = options.Rng;
+            _rng = options.Rng;
         }
 
         /// <summary>
@@ -88,19 +86,17 @@ namespace Hashing
         {
             var options = optionsValue ?? new PasswordHasherOptions();
 
-            this.compatibilityMode = options.CompatibilityMode;
-            switch (this.compatibilityMode)
+            _compatibilityMode = options.CompatibilityMode;
+            switch (_compatibilityMode)
             {
                 case PasswordHasherCompatibilityMode.IdentityV2:
                     // nothing else to do
                     break;
 
                 case PasswordHasherCompatibilityMode.IdentityV3:
-                    this.iterCount = options.IterationCount;
-                    if (this.iterCount < 1)
-                    {
+                    _iterCount = options.IterationCount;
+                    if (_iterCount < 1)
                         throw new InvalidOperationException("The iteration count must be a positive integer.");
-                    }
 
                     break;
 
@@ -108,7 +104,7 @@ namespace Hashing
                     throw new InvalidOperationException("The provided PasswordHasherCompatibilityMode is invalid.");
             }
 
-            this.rng = options.Rng;
+            _rng = options.Rng;
         }
 
         /// <summary>
@@ -118,15 +114,12 @@ namespace Hashing
         /// <returns>A hashed representation of the supplied <paramref name="password" />.</returns>
         public virtual string HashPassword(string password)
         {
-            if (password == null)
-            {
-                throw new ArgumentNullException(nameof(password));
-            }
+            if (password == null) throw new ArgumentNullException(nameof(password));
 
             return Convert.ToBase64String(
-                this.compatibilityMode == PasswordHasherCompatibilityMode.IdentityV2
-                    ? HashPasswordV2(password, this.rng)
-                    : this.HashPasswordV3(password, this.rng));
+                _compatibilityMode == PasswordHasherCompatibilityMode.IdentityV2
+                    ? HashPasswordV2(password, _rng)
+                    : HashPasswordV3(password, _rng));
         }
 
         /// <summary>
@@ -138,51 +131,34 @@ namespace Hashing
         /// <remarks>Implementations of this method should be time consistent.</remarks>
         public virtual PasswordVerificationResult VerifyHashedPassword(string hashedPassword, string providedPassword)
         {
-            if (hashedPassword == null)
-            {
-                throw new ArgumentNullException(nameof(hashedPassword));
-            }
+            if (hashedPassword == null) throw new ArgumentNullException(nameof(hashedPassword));
 
-            if (providedPassword == null)
-            {
-                throw new ArgumentNullException(nameof(providedPassword));
-            }
+            if (providedPassword == null) throw new ArgumentNullException(nameof(providedPassword));
 
             var decodedHashedPassword = Convert.FromBase64String(hashedPassword);
 
             // read the format marker from the hashed password
-            if (decodedHashedPassword.Length == 0)
-            {
-                return PasswordVerificationResult.Failed;
-            }
+            if (decodedHashedPassword.Length == 0) return PasswordVerificationResult.Failed;
 
             switch (decodedHashedPassword[0])
             {
                 case 0x00:
                     if (VerifyHashedPasswordV2(decodedHashedPassword, providedPassword))
-                    {
                         // This is an old password hash format - the caller needs to rehash if we're not running in an older compat mode.
-                        return this.compatibilityMode == PasswordHasherCompatibilityMode.IdentityV3
-                                   ? PasswordVerificationResult.SuccessRehashNeeded
-                                   : PasswordVerificationResult.Success;
-                    }
+                        return _compatibilityMode == PasswordHasherCompatibilityMode.IdentityV3
+                            ? PasswordVerificationResult.SuccessRehashNeeded
+                            : PasswordVerificationResult.Success;
                     else
-                    {
                         return PasswordVerificationResult.Failed;
-                    }
 
                 case 0x01:
                     if (VerifyHashedPasswordV3(decodedHashedPassword, providedPassword, out var embeddedIterCount))
-                    {
                         // If this hasher was configured with a higher iteration count, change the entry now.
-                        return embeddedIterCount < this.iterCount
-                                   ? PasswordVerificationResult.SuccessRehashNeeded
-                                   : PasswordVerificationResult.Success;
-                    }
+                        return embeddedIterCount < _iterCount
+                            ? PasswordVerificationResult.SuccessRehashNeeded
+                            : PasswordVerificationResult.Success;
                     else
-                    {
                         return PasswordVerificationResult.Failed;
-                    }
 
                 default:
                     return PasswordVerificationResult.Failed; // unknown format marker
@@ -197,25 +173,25 @@ namespace Hashing
         /// <returns>A <see cref="T:byte[]" /> of the hashed password.</returns>
         private static byte[] HashPasswordV2(string password, RandomNumberGenerator rng)
         {
-            const KeyDerivationPrf Pbkdf2Prf = KeyDerivationPrf.HMACSHA1; // default for Rfc2898DeriveBytes
-            const int Pbkdf2IterCount = 1000; // default for Rfc2898DeriveBytes
-            const int Pbkdf2SubkeyLength = 256 / 8; // 256 bits
-            const int SaltSize = 128 / 8; // 128 bits
+            const KeyDerivationPrf pbkdf2Prf = KeyDerivationPrf.HMACSHA1; // default for Rfc2898DeriveBytes
+            const int pbkdf2IterCount = 1000; // default for Rfc2898DeriveBytes
+            const int pbkdf2SubKeyLength = 256 / 8; // 256 bits
+            const int saltSize = 128 / 8; // 128 bits
 
             // Produce a version 2 (see comment above) text hash.
-            var salt = new byte[SaltSize];
+            var salt = new byte[saltSize];
             rng.GetBytes(salt);
-            var subkey = NetCorePbkdf2Provider.DeriveKey(
+            var subKey = NetCorePbkdf2Provider.DeriveKey(
                 password,
                 salt,
-                Pbkdf2Prf,
-                Pbkdf2IterCount,
-                Pbkdf2SubkeyLength);
+                pbkdf2Prf,
+                pbkdf2IterCount,
+                pbkdf2SubKeyLength);
 
-            var outputBytes = new byte[1 + SaltSize + Pbkdf2SubkeyLength];
+            var outputBytes = new byte[1 + saltSize + pbkdf2SubKeyLength];
             outputBytes[0] = 0x00; // format marker
-            Buffer.BlockCopy(salt, 0, outputBytes, 1, SaltSize);
-            Buffer.BlockCopy(subkey, 0, outputBytes, 1 + SaltSize, Pbkdf2SubkeyLength);
+            Buffer.BlockCopy(salt, 0, outputBytes, 1, saltSize);
+            Buffer.BlockCopy(subKey, 0, outputBytes, 1 + saltSize, pbkdf2SubKeyLength);
             return outputBytes;
         }
 
@@ -240,67 +216,65 @@ namespace Hashing
             // Produce a version 3 (see comment above) text hash.
             var salt = new byte[saltSize];
             rng.GetBytes(salt);
-            var subkey = NetCorePbkdf2Provider.DeriveKey(password, salt, prf, iterCount, numBytesRequested);
+            var subKey = NetCorePbkdf2Provider.DeriveKey(password, salt, prf, iterCount, numBytesRequested);
 
-            var outputBytes = new byte[13 + salt.Length + subkey.Length];
+            var outputBytes = new byte[13 + salt.Length + subKey.Length];
             outputBytes[0] = 0x01; // format marker
-            WriteNetworkByteOrder(outputBytes, 1, (uint)prf);
-            WriteNetworkByteOrder(outputBytes, 5, (uint)iterCount);
-            WriteNetworkByteOrder(outputBytes, 9, (uint)saltSize);
+            WriteNetworkByteOrder(outputBytes, 1, (uint) prf);
+            WriteNetworkByteOrder(outputBytes, 5, (uint) iterCount);
+            WriteNetworkByteOrder(outputBytes, 9, (uint) saltSize);
             Buffer.BlockCopy(salt, 0, outputBytes, 13, salt.Length);
-            Buffer.BlockCopy(subkey, 0, outputBytes, 13 + saltSize, subkey.Length);
+            Buffer.BlockCopy(subKey, 0, outputBytes, 13 + saltSize, subKey.Length);
             return outputBytes;
         }
 
         /// <summary>
-        /// Reads the network byte order.
+        ///     Reads the network byte order.
         /// </summary>
         /// <param name="buffer">The buffer.</param>
         /// <param name="offset">The offset.</param>
-        /// <returns>A <see cref="uint"/> representing the network byte order.</returns>
+        /// <returns>A <see cref="uint" /> representing the network byte order.</returns>
         private static uint ReadNetworkByteOrder(IReadOnlyList<byte> buffer, int offset)
         {
-            return ((uint)buffer[offset + 0] << 24) | ((uint)buffer[offset + 1] << 16) | ((uint)buffer[offset + 2] << 8)
+            return ((uint) buffer[offset + 0] << 24) | ((uint) buffer[offset + 1] << 16) |
+                   ((uint) buffer[offset + 2] << 8)
                    | buffer[offset + 3];
         }
 
         /// <summary>
-        /// Verifies a hashed password in version 2.
+        ///     Verifies a hashed password in version 2.
         /// </summary>
         /// <param name="hashedPassword">The hashed password.</param>
         /// <param name="password">The password.</param>
         /// <returns><c>true</c> if the password matches, <c>false</c> else.</returns>
         private static bool VerifyHashedPasswordV2(byte[] hashedPassword, string password)
         {
-            const KeyDerivationPrf Pbkdf2Prf = KeyDerivationPrf.HMACSHA1; // default for Rfc2898DeriveBytes
-            const int Pbkdf2IterCount = 1000; // default for Rfc2898DeriveBytes
-            const int Pbkdf2SubkeyLength = 256 / 8; // 256 bits
-            const int SaltSize = 128 / 8; // 128 bits
+            const KeyDerivationPrf pbkdf2Prf = KeyDerivationPrf.HMACSHA1; // default for Rfc2898DeriveBytes
+            const int pbkdf2IterCount = 1000; // default for Rfc2898DeriveBytes
+            const int pbkdf2SubKeyLength = 256 / 8; // 256 bits
+            const int saltSize = 128 / 8; // 128 bits
 
             // We know ahead of time the exact length of a valid hashed password payload.
-            if (hashedPassword.Length != 1 + SaltSize + Pbkdf2SubkeyLength)
-            {
-                return false; // bad size
-            }
+            if (hashedPassword.Length != 1 + saltSize + pbkdf2SubKeyLength) return false; // bad size
 
-            var salt = new byte[SaltSize];
+            var salt = new byte[saltSize];
             Buffer.BlockCopy(hashedPassword, 1, salt, 0, salt.Length);
 
-            var expectedSubkey = new byte[Pbkdf2SubkeyLength];
-            Buffer.BlockCopy(hashedPassword, 1 + salt.Length, expectedSubkey, 0, expectedSubkey.Length);
+            var expectedSubKey = new byte[pbkdf2SubKeyLength];
+            Buffer.BlockCopy(hashedPassword, 1 + salt.Length, expectedSubKey, 0, expectedSubKey.Length);
 
             // Hash the incoming password and verify it
-            var actualSubkey = NetCorePbkdf2Provider.DeriveKey(
+            var actualSubKey = NetCorePbkdf2Provider.DeriveKey(
                 password,
                 salt,
-                Pbkdf2Prf,
-                Pbkdf2IterCount,
-                Pbkdf2SubkeyLength);
-            return CryptographicOperations.FixedTimeEquals(actualSubkey, expectedSubkey);
+                pbkdf2Prf,
+                pbkdf2IterCount,
+                pbkdf2SubKeyLength);
+            return CryptographicOperations.FixedTimeEquals(actualSubKey, expectedSubKey);
         }
 
         /// <summary>
-        /// Verifies a hashed password in version 3.
+        ///     Verifies a hashed password in version 3.
         /// </summary>
         /// <param name="hashedPassword">The hashed password.</param>
         /// <param name="password">The password.</param>
@@ -313,32 +287,26 @@ namespace Hashing
             try
             {
                 // Read header information
-                var prf = (KeyDerivationPrf)ReadNetworkByteOrder(hashedPassword, 1);
-                iterCount = (int)ReadNetworkByteOrder(hashedPassword, 5);
-                var saltLength = (int)ReadNetworkByteOrder(hashedPassword, 9);
+                var prf = (KeyDerivationPrf) ReadNetworkByteOrder(hashedPassword, 1);
+                iterCount = (int) ReadNetworkByteOrder(hashedPassword, 5);
+                var saltLength = (int) ReadNetworkByteOrder(hashedPassword, 9);
 
                 // Read the salt: must be >= 128 bits
-                if (saltLength < 128 / 8)
-                {
-                    return false;
-                }
+                if (saltLength < 128 / 8) return false;
 
                 var salt = new byte[saltLength];
                 Buffer.BlockCopy(hashedPassword, 13, salt, 0, salt.Length);
 
-                // Read the subkey (the rest of the payload): must be >= 128 bits
-                var subkeyLength = hashedPassword.Length - 13 - salt.Length;
-                if (subkeyLength < 128 / 8)
-                {
-                    return false;
-                }
+                // Read the sub key (the rest of the payload): must be >= 128 bits
+                var subKeyLength = hashedPassword.Length - 13 - salt.Length;
+                if (subKeyLength < 128 / 8) return false;
 
-                var expectedSubkey = new byte[subkeyLength];
-                Buffer.BlockCopy(hashedPassword, 13 + salt.Length, expectedSubkey, 0, expectedSubkey.Length);
+                var expectedSubKey = new byte[subKeyLength];
+                Buffer.BlockCopy(hashedPassword, 13 + salt.Length, expectedSubKey, 0, expectedSubKey.Length);
 
                 // Hash the incoming password and verify it
-                var actualSubkey = NetCorePbkdf2Provider.DeriveKey(password, salt, prf, iterCount, subkeyLength);
-                return CryptographicOperations.FixedTimeEquals(actualSubkey, expectedSubkey);
+                var actualSubKey = NetCorePbkdf2Provider.DeriveKey(password, salt, prf, iterCount, subKeyLength);
+                return CryptographicOperations.FixedTimeEquals(actualSubKey, expectedSubKey);
             }
             catch
             {
@@ -350,17 +318,18 @@ namespace Hashing
         }
 
         /// <summary>
-        /// Writes the network byte order.
+        ///     Writes the network byte order.
         /// </summary>
         /// <param name="buffer">The buffer.</param>
         /// <param name="offset">The offset.</param>
         /// <param name="value">The network order value.</param>
         private static void WriteNetworkByteOrder(IList<byte> buffer, int offset, uint value)
         {
-            buffer[offset + 0] = (byte)(value >> 24);
-            buffer[offset + 1] = (byte)(value >> 16);
-            buffer[offset + 2] = (byte)(value >> 8);
-            buffer[offset + 3] = (byte)(value >> 0);
+            buffer[offset + 0] = (byte) (value >> 24);
+            buffer[offset + 1] = (byte) (value >> 16);
+            buffer[offset + 2] = (byte) (value >> 8);
+            // ReSharper disable once ShiftExpressionRealShiftCountIsZero
+            buffer[offset + 3] = (byte) (value >> 0);
         }
 
         /// <summary>
@@ -371,7 +340,8 @@ namespace Hashing
         /// <returns>A <see cref="T:byte[]" /> of the hashed password.</returns>
         private byte[] HashPasswordV3(string password, RandomNumberGenerator randomNumberGenerator)
         {
-            return HashPasswordV3(password, randomNumberGenerator, KeyDerivationPrf.HMACSHA256, this.iterCount, 128 / 8, 256 / 8);
+            return HashPasswordV3(password, randomNumberGenerator, KeyDerivationPrf.HMACSHA256, _iterCount, 128 / 8,
+                256 / 8);
         }
     }
 }

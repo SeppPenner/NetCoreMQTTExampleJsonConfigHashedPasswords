@@ -1,16 +1,15 @@
-﻿namespace CreateHashes
+﻿using System;
+using Hashing;
+
+namespace CreateHashes
 {
-    using System;
-
-    using Hashing;
-
     /// <summary>
-    /// This program can be used to generate hashes from a certain password to use in the config.json file.
+    ///     This program can be used to generate hashes from a certain password to use in the config.json file.
     /// </summary>
     public class Program
     {
         /// <summary>
-        /// Defines the entry point of the application.
+        ///     Defines the entry point of the application.
         /// </summary>
         /// <param name="args">The arguments.</param>
         public static void Main(string[] args)

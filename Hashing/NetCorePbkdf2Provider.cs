@@ -8,35 +8,37 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Hashing
 {
-    using System;
-    using System.Diagnostics;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Security.Cryptography;
-    using System.Text;
-
     /// <summary>
-    /// Implements Pbkdf2 using <see cref="Rfc2898DeriveBytes"/>.
+    ///     Implements Pbkdf2 using <see cref="Rfc2898DeriveBytes" />.
     /// </summary>
-    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
+    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly",
+        Justification = "Reviewed. Suppression is OK here.")]
     public static class NetCorePbkdf2Provider
     {
         /// <summary>
-        /// The fallback provider.
+        ///     The fallback provider.
         /// </summary>
         private static readonly ManagedPbkdf2Provider FallbackProvider = new ManagedPbkdf2Provider();
 
         /// <summary>
-        /// Gets the derived key.
+        ///     Gets the derived key.
         /// </summary>
         /// <param name="password">The password.</param>
         /// <param name="salt">The salt.</param>
         /// <param name="prf">The PRF.</param>
         /// <param name="iterationCount">The iteration count.</param>
         /// <param name="numBytesRequested">The number of requested bytes.</param>
-        /// <returns>A <see cref="T:byte[]"/> of the derived key data.</returns>
-        public static byte[] DeriveKey(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount, int numBytesRequested)
+        /// <returns>A <see cref="T:byte[]" /> of the derived key data.</returns>
+        public static byte[] DeriveKey(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount,
+            int numBytesRequested)
         {
             Debug.Assert(password != null, "Password != null");
             Debug.Assert(salt != null, "Salt != null");
@@ -45,26 +47,25 @@ namespace Hashing
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
             if (salt.Length < 8)
-            {
                 // Rfc2898DeriveBytes enforces the 8 byte recommendation.
                 // To maintain compatibility, we call into ManagedPbkdf2Provider for salts shorter than 8 bytes
                 // because we can't use Rfc2898DeriveBytes with this salt.
                 return FallbackProvider.DeriveKey(password, salt, prf, iterationCount, numBytesRequested);
-            }
 
             return DeriveKeyImpl(password, salt, prf, iterationCount, numBytesRequested);
         }
 
         /// <summary>
-        /// Gets the derived key.
+        ///     Gets the derived key.
         /// </summary>
         /// <param name="password">The password.</param>
         /// <param name="salt">The salt.</param>
         /// <param name="prf">The PRF.</param>
         /// <param name="iterationCount">The iteration count.</param>
         /// <param name="numBytesRequested">The number of requested bytes.</param>
-        /// <returns>A <see cref="T:byte[]"/> of the derived key data.</returns>
-        private static byte[] DeriveKeyImpl(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount, int numBytesRequested)
+        /// <returns>A <see cref="T:byte[]" /> of the derived key data.</returns>
+        private static byte[] DeriveKeyImpl(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount,
+            int numBytesRequested)
         {
             HashAlgorithmName algorithmName;
             switch (prf)

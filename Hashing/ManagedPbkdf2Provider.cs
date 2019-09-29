@@ -9,30 +9,31 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
+using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+
 namespace Hashing
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Diagnostics;
-    using System.Security.Cryptography;
-    using System.Text;
-
     /// <summary>
-    /// A PBKDF2 provider which utilizes the managed hash algorithm classes as PRFs.
-    /// This isn't the preferred provider since the implementation is slow, but it is provided as a fallback.
+    ///     A PBKDF2 provider which utilizes the managed hash algorithm classes as PRFs.
+    ///     This isn't the preferred provider since the implementation is slow, but it is provided as a fallback.
     /// </summary>
     internal sealed class ManagedPbkdf2Provider
     {
         /// <summary>
-        /// Gets the derived key.
+        ///     Gets the derived key.
         /// </summary>
         /// <param name="password">The password.</param>
         /// <param name="salt">The salt.</param>
         /// <param name="prf">The PRF.</param>
         /// <param name="iterationCount">The iteration count.</param>
         /// <param name="numBytesRequested">The number of requested bytes.</param>
-        /// <returns>A <see cref="T:byte[]"/> of the derived key data.</returns>
-        public byte[] DeriveKey(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount, int numBytesRequested)
+        /// <returns>A <see cref="T:byte[]" /> of the derived key data.</returns>
+        public byte[] DeriveKey(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount,
+            int numBytesRequested)
         {
             Debug.Assert(password != null, "Password != null");
             Debug.Assert(salt != null, "Salt != null");
@@ -55,10 +56,10 @@ namespace Hashing
                 for (uint blockIndex = 1; numBytesRemaining > 0; blockIndex++)
                 {
                     // write the block index out as big-endian
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 4] = (byte)(blockIndex >> 24);
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 3] = (byte)(blockIndex >> 16);
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 2] = (byte)(blockIndex >> 8);
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 1] = (byte)blockIndex;
+                    saltWithBlockIndex[saltWithBlockIndex.Length - 4] = (byte) (blockIndex >> 24);
+                    saltWithBlockIndex[saltWithBlockIndex.Length - 3] = (byte) (blockIndex >> 16);
+                    saltWithBlockIndex[saltWithBlockIndex.Length - 2] = (byte) (blockIndex >> 8);
+                    saltWithBlockIndex[saltWithBlockIndex.Length - 1] = (byte) blockIndex;
 
                     // U_1 = PRF(U_0) = PRF(Salt || block_index)
                     // T_blockIndex = U_1
@@ -86,11 +87,11 @@ namespace Hashing
         }
 
         /// <summary>
-        /// Gets the key hash algorithm.
+        ///     Gets the key hash algorithm.
         /// </summary>
         /// <param name="prf">The PRF.</param>
         /// <param name="password">The password.</param>
-        /// <returns>The <see cref="KeyedHashAlgorithm"/> to use.</returns>
+        /// <returns>The <see cref="KeyedHashAlgorithm" /> to use.</returns>
         private static KeyedHashAlgorithm PrfToManagedHmacAlgorithm(KeyDerivationPrf prf, string password)
         {
             var passwordBytes = Encoding.UTF8.GetBytes(password);
@@ -116,19 +117,16 @@ namespace Hashing
         }
 
         /// <summary>
-        /// Buffers the source with XORs.
+        ///     Buffers the source with XORs.
         /// </summary>
-        /// <param name="source">The source <see cref="T:byte[]"/>.</param>
-        /// <param name="destination">The destination <see cref="T:byte[]"/>.</param>
+        /// <param name="source">The source <see cref="T:byte[]" />.</param>
+        /// <param name="destination">The destination <see cref="T:byte[]" />.</param>
         private static void XorBuffers(IReadOnlyList<byte> source, IList<byte> destination)
         {
             // Note: destination buffer is mutated.
             Debug.Assert(source.Count == destination.Count, "source.Length == destination.Length");
 
-            for (var i = 0; i < source.Count; i++)
-            {
-                destination[i] ^= source[i];
-            }
+            for (var i = 0; i < source.Count; i++) destination[i] ^= source[i];
         }
     }
 }

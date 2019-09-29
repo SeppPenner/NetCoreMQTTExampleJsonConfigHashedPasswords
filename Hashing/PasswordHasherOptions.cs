@@ -9,42 +9,43 @@
 // --------------------------------------------------------------------------------------------------------------------
 
 
+using System.Security.Cryptography;
+
 namespace Hashing
 {
-    using System.Security.Cryptography;
-
     /// <summary>
-    /// Specifies options for password hashing.
+    ///     Specifies options for password hashing.
     /// </summary>
     public class PasswordHasherOptions
     {
         /// <summary>
-        /// The default random number generator.
+        ///     The default random number generator.
         /// </summary>
         private static readonly RandomNumberGenerator DefaultRng = RandomNumberGenerator.Create();
 
         /// <summary>
-        /// Gets or sets the compatibility mode used when hashing passwords. Defaults to 'ASP.NET Identity version 3'.
+        ///     Gets or sets the compatibility mode used when hashing passwords. Defaults to 'ASP.NET Identity version 3'.
         /// </summary>
         /// <value>
-        /// The compatibility mode used when hashing passwords.
+        ///     The compatibility mode used when hashing passwords.
         /// </value>
-        public PasswordHasherCompatibilityMode CompatibilityMode { get; set; } = PasswordHasherCompatibilityMode.IdentityV3;
+        public PasswordHasherCompatibilityMode CompatibilityMode { get; set; } =
+            PasswordHasherCompatibilityMode.IdentityV3;
 
         /// <summary>
-        /// Gets or sets the number of iterations used when hashing passwords using PBKDF2. Default is 10,000.
+        ///     Gets or sets the number of iterations used when hashing passwords using PBKDF2. Default is 10,000.
         /// </summary>
         /// <value>
-        /// The number of iterations used when hashing passwords using PBKDF2.
+        ///     The number of iterations used when hashing passwords using PBKDF2.
         /// </value>
         /// <remarks>
-        /// This value is only used when the compatibility mode is set to 'V3'.
-        /// The value must be a positive integer. 
+        ///     This value is only used when the compatibility mode is set to 'V3'.
+        ///     The value must be a positive integer.
         /// </remarks>
         public int IterationCount { get; set; } = 10000;
 
         /// <summary>
-        /// Gets or sets the internal random number generator. For unit testing.
+        ///     Gets or sets the internal random number generator. For unit testing.
         /// </summary>
         internal RandomNumberGenerator Rng { get; set; } = DefaultRng;
     }

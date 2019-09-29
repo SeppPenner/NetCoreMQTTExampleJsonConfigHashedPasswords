@@ -1,17 +1,16 @@
+using Microsoft.VisualStudio.TestTools.UnitTesting;
+using NetCoreMQTTExampleJsonConfigHashedPasswords;
+
 namespace TopicCheckerTest
 {
-    using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-    using NetCoreMQTTExampleJsonConfigHashedPasswords;
-
     /// <summary>
-    /// A test class to test the <see cref="TopicCheckerTest"/> with multiple operators.
+    ///     A test class to test the <see cref="TopicCheckerTest" /> with multiple operators.
     /// </summary>
     [TestClass]
     public class TopicCheckerTestsMultipleOperators
     {
         /// <summary>
-        /// Checks the tester with a valid # topic with multiple operators and a single +.
+        ///     Checks the tester with a valid # topic with multiple operators and a single +.
         /// </summary>
         [TestMethod]
         public void CheckMultipleValueCrossMatchSinglePlus()
@@ -21,7 +20,7 @@ namespace TopicCheckerTest
         }
 
         /// <summary>
-        /// Checks the tester with a valid # topic with multiple operators and multiple +.
+        ///     Checks the tester with a valid # topic with multiple operators and multiple +.
         /// </summary>
         [TestMethod]
         public void CheckMultipleValueCrossMatchMultiplePlus()
@@ -31,7 +30,7 @@ namespace TopicCheckerTest
         }
 
         /// <summary>
-        /// Checks the tester with a valid # topic with multiple operators.
+        ///     Checks the tester with a valid # topic with multiple operators.
         /// </summary>
         [TestMethod]
         public void CheckMultipleValueCrossMatchMixed()
@@ -41,7 +40,7 @@ namespace TopicCheckerTest
         }
 
         /// <summary>
-        /// Checks the tester with an invalid # topic with multiple operators.
+        ///     Checks the tester with an invalid # topic with multiple operators.
         /// </summary>
         [TestMethod]
         public void CheckMultipleValueCrossDontMatchMixed()
@@ -51,7 +50,7 @@ namespace TopicCheckerTest
         }
 
         /// <summary>
-        /// Checks the tester with multiple + topics without operators.
+        ///     Checks the tester with multiple + topics without operators.
         /// </summary>
         [TestMethod]
         public void CheckMultipleValuePlusMatchNoOperators()
