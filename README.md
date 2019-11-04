@@ -8,7 +8,7 @@ The project was written and tested in .NetCore 3.0.
 [![GitHub issues](https://img.shields.io/github/issues/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords.svg)](https://github.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/issues)
 [![GitHub forks](https://img.shields.io/github/forks/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords.svg)](https://github.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/network)
 [![GitHub stars](https://img.shields.io/github/stars/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords.svg)](https://github.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/stargazers)
-[![GitHub license](https://img.shields.io/badge/license-AGPL-blue.svg)](https://raw.githubusercontent.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/master/License.txt)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/master/License.txt)
 [![Known Vulnerabilities](https://snyk.io/test/github/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/badge.svg)](https://snyk.io/test/github/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords)
 
 ## How to use this project:
