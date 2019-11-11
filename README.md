@@ -97,6 +97,45 @@ Users can be defined in two different ways (The ways can be combined making sure
 }
 ```
 
+### Various definition (Matching all client ids for one username and password combination):
+
+```json
+{
+  "Port": 8883,
+  "Users": [
+    {
+      "UserName": "Hans2",
+      "Password": "AQAAAAEAACcQAAAAECcnkwU+LImyVorjCCNzpTGgYOjVxFd+i/PW3MyU2sws80uPkPrppb+AXnvaxVI/0Q==",
+      "ValidateClientId": "false",
+      "SubscriptionTopicLists": {
+        "BlacklistTopics": [
+          "g",
+          "h/+",
+          "i/#"
+        ],
+        "WhitelistTopics": [
+          "j",
+          "k/+",
+          "l/#"
+        ]
+      },
+      "PublishTopicLists": {
+        "BlacklistTopics": [
+          "g",
+          "h/+",
+          "i/#"
+        ],
+        "WhitelistTopics": [
+          "j",
+          "k/+",
+          "l/#"
+        ]
+      }
+    }
+  ]
+}
+```
+
 ## Attention:
 * Only the following [UTF-8](https://www.utf8-chartable.de/unicode-utf8-table.pl) chars are supported for topics:
 
@@ -309,6 +348,7 @@ An example certificate is in the folder. Password for all is `test`.
 Change history
 --------------
 
+* **Version 1.0.3.0 (2019-11-11)** : Added possibility to use all client ids with one user, added better logging.
 * **Version 1.0.2.0 (2019-09-29)** : Updated to .NetCore 3.0, updated nuget packages, fixed code style.
 * **Version 1.0.1.0 (2019-08-22)** : Updated MQTTnet to 3.0.8.
 * **Version 1.0.0.0 (2019-07-14)** : 1.0 release.

@@ -6,11 +6,13 @@ using System.Linq;
 using System.Reflection;
 using System.Security.Authentication;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 using Hashing;
 using MQTTnet;
 using MQTTnet.Protocol;
 using MQTTnet.Server;
 using Newtonsoft.Json;
+using Serilog;
 
 namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
@@ -45,6 +47,12 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                 "test",
                 X509KeyStorageFlags.Exportable);
 
+            Log.Logger = new LoggerConfiguration()
+                .MinimumLevel.Debug()
+                .WriteTo.RollingFile(Path.Combine(currentPath,
+                    @"..\log\NetCoreMQTTExampleJsonConfigHashedPasswords_{Date}.txt"))
+                .CreateLogger();
+
             var config = ReadConfiguration(currentPath);
 
             var optionsBuilder = new MqttServerOptionsBuilder()
@@ -63,12 +71,14 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         if (currentUser == null)
                         {
                             c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                            LogMessage(c, true);
                             return;
                         }
 
                         if (c.Username != currentUser.UserName)
                         {
                             c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                            LogMessage(c, true);
                             return;
                         }
 
@@ -77,6 +87,15 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         if (hashingResult == PasswordVerificationResult.Failed)
                         {
                             c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                            LogMessage(c, true);
+                            return;
+                        }
+
+                        if (!currentUser.ValidateClientId)
+                        {
+                            c.ReasonCode = MqttConnectReasonCode.Success;
+                            c.SessionItems.Add(c.ClientId, currentUser);
+                            LogMessage(c, false);
                             return;
                         }
 
@@ -85,6 +104,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             if (c.ClientId != currentUser.ClientId)
                             {
                                 c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                                LogMessage(c, true);
                                 return;
                             }
 
@@ -99,6 +119,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         }
 
                         c.ReasonCode = MqttConnectReasonCode.Success;
+                        LogMessage(c, false);
                     }).WithSubscriptionInterceptor(
                     c =>
                     {
@@ -120,6 +141,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         if (!userFound || currentUser == null)
                         {
                             c.AcceptSubscription = false;
+                            LogMessage(c, false);
                             return;
                         }
 
@@ -128,12 +150,14 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         if (currentUser.SubscriptionTopicLists.BlacklistTopics.Contains(topic))
                         {
                             c.AcceptSubscription = false;
+                            LogMessage(c, false);
                             return;
                         }
 
                         if (currentUser.SubscriptionTopicLists.WhitelistTopics.Contains(topic))
                         {
                             c.AcceptSubscription = true;
+                            LogMessage(c, true);
                             return;
                         }
 
@@ -144,6 +168,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             if (!doesTopicMatch) continue;
 
                             c.AcceptSubscription = false;
+                            LogMessage(c, false);
                             return;
                         }
 
@@ -154,10 +179,12 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             if (!doesTopicMatch) continue;
 
                             c.AcceptSubscription = true;
+                            LogMessage(c, true);
                             return;
                         }
 
                         c.AcceptSubscription = false;
+                        LogMessage(c, false);
                     }).WithApplicationMessageInterceptor(
                     c =>
                     {
@@ -193,6 +220,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         if (currentUser.PublishTopicLists.WhitelistTopics.Contains(topic))
                         {
                             c.AcceptPublish = true;
+                            LogMessage(c);
                             return;
                         }
 
@@ -213,6 +241,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             if (!doesTopicMatch) continue;
 
                             c.AcceptPublish = true;
+                            LogMessage(c);
                             return;
                         }
 
@@ -259,6 +288,50 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
             }
 
             return config;
+        }
+
+        /// <summary> 
+        ///     Logs the message from the MQTT subscription interceptor context. 
+        /// </summary> 
+        /// <param name="context">The MQTT subscription interceptor context.</param> 
+        /// <param name="successful">A <see cref="bool"/> value indicating whether the subscription was successful or not.</param> 
+        private static void LogMessage(MqttSubscriptionInterceptorContext context, bool successful)
+        {
+            Log.Information(successful ? $"New subscription: ClientId = {context.ClientId}, TopicFilter = {context.TopicFilter}" : $"Subscription failed for clientId = {context.ClientId}, TopicFilter = {context.TopicFilter}");
+        }
+
+        /// <summary>
+        ///     Logs the message from the MQTT message interceptor context.
+        /// </summary>
+        /// <param name="context">The MQTT message interceptor context.</param>
+        private static void LogMessage(MqttApplicationMessageInterceptorContext context)
+        {
+            Log.Information(
+                $"Message: ClientId = {context.ClientId}, Topic = {context.ApplicationMessage.Topic},"
+                + $" Payload = {Encoding.UTF8.GetString(context.ApplicationMessage.Payload)}, QoS = {context.ApplicationMessage.QualityOfServiceLevel},"
+                + $" Retain-Flag = {context.ApplicationMessage.Retain}");
+        }
+
+        /// <summary> 
+        ///     Logs the message from the MQTT connection validation context. 
+        /// </summary> 
+        /// <param name="context">The MQTT connection validation context.</param> 
+        /// <param name="showPassword">A <see cref="bool"/> value indicating whether the password is written to the log or not.</param> 
+        private static void LogMessage(MqttConnectionValidatorContext context, bool showPassword)
+        {
+            if (showPassword)
+            {
+                Log.Information(
+                    $"New connection: ClientId = {context.ClientId}, Endpoint = {context.Endpoint},"
+                    + $" Username = {context.Username}, Password = {context.Password},"
+                    + $" CleanSession = {context.CleanSession}");
+            }
+            else
+            {
+                Log.Information(
+                    $"New connection: ClientId = {context.ClientId}, Endpoint = {context.Endpoint},"
+                    + $" Username = {context.Username}, CleanSession = {context.CleanSession}");
+            }
         }
     }
 }

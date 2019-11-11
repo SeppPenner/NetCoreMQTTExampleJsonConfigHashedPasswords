@@ -35,5 +35,10 @@
         ///     prefix for one username / password combination).
         /// </summary>
         public string ClientIdPrefix { get; set; }
+
+        /// <summary> 
+        /// Gets or sets a value indicating whether the client id is validated or not. 
+        /// </summary> 
+        public bool ValidateClientId { get; set; } = true;
     }
 }
