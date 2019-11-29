@@ -49,8 +49,8 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 
             Log.Logger = new LoggerConfiguration()
                 .MinimumLevel.Debug()
-                .WriteTo.RollingFile(Path.Combine(currentPath,
-                    @"..\log\NetCoreMQTTExampleJsonConfigHashedPasswords_{Date}.txt"))
+                .WriteTo.File(Path.Combine(currentPath,
+                    @"log\NetCoreMQTTExampleJsonConfigHashedPasswords_.txt"), rollingInterval: RollingInterval.Day)
                 .CreateLogger();
 
             var config = ReadConfiguration(currentPath);
