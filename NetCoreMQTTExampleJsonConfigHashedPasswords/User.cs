@@ -40,5 +40,15 @@
         /// Gets or sets a value indicating whether the client id is validated or not. 
         /// </summary> 
         public bool ValidateClientId { get; set; } = true;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the user is throttled after a certain limit or not.
+        /// </summary>
+        public bool ThrottleUser { get; set; }
+
+        /// <summary>
+        /// Gets or sets a user's monthly limit in byte.
+        /// </summary>
+        public long MonthlyByteLimit { get; set; }
     }
 }

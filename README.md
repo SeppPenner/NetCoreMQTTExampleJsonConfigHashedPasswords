@@ -136,6 +136,42 @@ Users can be defined in two different ways (The ways can be combined making sure
 }
 ```
 
+## Temporarily locking clients
+Users can be blocked temporarily (until the end of the current month) if they exceed a certain data quota.
+Therefore, the parameter `ThrottleUser` must be set to` true` and `MonthlyByteLimit` to the desired threshold in bytes.
+
+Example:
+```json
+{
+  "Port": 8883,
+  "Users": [
+    {
+      "UserName": "Sepp",
+      "ClientId": "Sepp",
+      "Password": "Sepp",
+      "SubscriptionTopicLists": {
+        "BlacklistTopics": [
+          "a"
+        ],
+        "WhitelistTopics": [
+          "d"
+        ]
+      },
+      "PublishTopicLists": {
+        "BlacklistTopics": [
+          "a"
+        ],
+        "WhitelistTopics": [
+          "d"
+        ]
+      },
+	  "ThrottleUser" : true,
+	  "MonthlyByteLimit" : 1024
+    }
+  ]
+}
+```
+
 ## Attention:
 * Only the following [UTF-8](https://www.utf8-chartable.de/unicode-utf8-table.pl) chars are supported for topics:
 
@@ -348,6 +384,7 @@ An example certificate is in the folder. Password for all is `test`.
 Change history
 --------------
 
+* **Version 1.0.5.0 (2020-02-03)** : Added possibility to lock users based on their data limit per month.
 * **Version 1.0.4.0 (2020-02-01)** : Updated nuget packages, moved to NetCore 3.1.
 * **Version 1.0.3.0 (2019-11-11)** : Added possibility to use all client ids with one user, added better logging.
 * **Version 1.0.2.0 (2019-09-29)** : Updated to .NetCore 3.0, updated nuget packages, fixed code style.
