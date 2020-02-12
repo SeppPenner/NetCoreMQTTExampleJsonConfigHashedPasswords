@@ -225,11 +225,14 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 
                             if (payload != null)
                             {
-                                if (IsUserThrottled(c.ClientId, payload.Length, currentUser.MonthlyByteLimit))
-                                {
-                                    c.AcceptPublish = false;
-                                    return;
-                                }
+                                if (currentUser.MonthlyByteLimit != null)
+								{
+									if (IsUserThrottled(c.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
+									{
+										c.AcceptPublish = false;
+										return;
+									}
+								}
                             }
                         }
 
