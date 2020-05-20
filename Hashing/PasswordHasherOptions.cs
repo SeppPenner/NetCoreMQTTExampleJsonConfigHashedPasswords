@@ -8,11 +8,10 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-
-using System.Security.Cryptography;
-
 namespace Hashing
 {
+    using System.Security.Cryptography;
+
     /// <summary>
     ///     Specifies options for password hashing.
     /// </summary>

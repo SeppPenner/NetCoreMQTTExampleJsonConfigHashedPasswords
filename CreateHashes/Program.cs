@@ -1,11 +1,23 @@
-﻿using System;
-using Hashing;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Program.cs" company="Haemmer Electronics">
+//   Copyright (c) 2020 All rights reserved.
+// </copyright>
+// <summary>
+//   This program can be used to generate hashes from a certain password to use in the config.json file.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace CreateHashes
 {
+    using System;
+    using System.Diagnostics.CodeAnalysis;
+
+    using Hashing;
+
     /// <summary>
     ///     This program can be used to generate hashes from a certain password to use in the config.json file.
     /// </summary>
+    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
     public class Program
     {
         /// <summary>

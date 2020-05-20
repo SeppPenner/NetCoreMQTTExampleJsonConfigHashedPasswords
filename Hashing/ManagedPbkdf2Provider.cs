@@ -9,14 +9,14 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Hashing
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Security.Cryptography;
+    using System.Text;
+
     /// <summary>
     ///     A PBKDF2 provider which utilizes the managed hash algorithm classes as PRFs.
     ///     This isn't the preferred provider since the implementation is slow, but it is provided as a fallback.
@@ -32,7 +32,11 @@ namespace Hashing
         /// <param name="iterationCount">The iteration count.</param>
         /// <param name="numBytesRequested">The number of requested bytes.</param>
         /// <returns>A <see cref="T:byte[]" /> of the derived key data.</returns>
-        public byte[] DeriveKey(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount,
+        public byte[] DeriveKey(
+            string password,
+            byte[] salt,
+            KeyDerivationPrf prf,
+            int iterationCount,
             int numBytesRequested)
         {
             Debug.Assert(password != null, "Password != null");
@@ -51,35 +55,33 @@ namespace Hashing
             var saltWithBlockIndex = new byte[checked(salt.Length + sizeof(uint))];
             Buffer.BlockCopy(salt, 0, saltWithBlockIndex, 0, salt.Length);
 
-            using (var hashAlgorithm = PrfToManagedHmacAlgorithm(prf, password))
+            using var hashAlgorithm = PrfToManagedHmacAlgorithm(prf, password);
+            for (uint blockIndex = 1; numBytesRemaining > 0; blockIndex++)
             {
-                for (uint blockIndex = 1; numBytesRemaining > 0; blockIndex++)
+                // write the block index out as big-endian
+                saltWithBlockIndex[^4] = (byte) (blockIndex >> 24);
+                saltWithBlockIndex[^3] = (byte) (blockIndex >> 16);
+                saltWithBlockIndex[^2] = (byte) (blockIndex >> 8);
+                saltWithBlockIndex[^1] = (byte) blockIndex;
+
+                // U_1 = PRF(U_0) = PRF(Salt || block_index)
+                // T_blockIndex = U_1
+                var u1 = hashAlgorithm.ComputeHash(saltWithBlockIndex); // this is U_1
+                var newIndex = u1;
+
+                for (var iter = 1; iter < iterationCount; iter++)
                 {
-                    // write the block index out as big-endian
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 4] = (byte) (blockIndex >> 24);
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 3] = (byte) (blockIndex >> 16);
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 2] = (byte) (blockIndex >> 8);
-                    saltWithBlockIndex[saltWithBlockIndex.Length - 1] = (byte) blockIndex;
+                    u1 = hashAlgorithm.ComputeHash(u1);
+                    XorBuffers(u1, newIndex);
 
-                    // U_1 = PRF(U_0) = PRF(Salt || block_index)
-                    // T_blockIndex = U_1
-                    var u1 = hashAlgorithm.ComputeHash(saltWithBlockIndex); // this is U_1
-                    var newIndex = u1;
-
-                    for (var iter = 1; iter < iterationCount; iter++)
-                    {
-                        u1 = hashAlgorithm.ComputeHash(u1);
-                        XorBuffers(u1, newIndex);
-
-                        // At this point, the 'u1' variable actually contains U_{iter+1} (due to indexing differences).
-                    }
-
-                    // At this point, we're done iterating on this block, so copy the transformed block into retVal.
-                    var numBytesToCopy = Math.Min(numBytesRemaining, newIndex.Length);
-                    Buffer.BlockCopy(newIndex, 0, retVal, numBytesWritten, numBytesToCopy);
-                    numBytesWritten += numBytesToCopy;
-                    numBytesRemaining -= numBytesToCopy;
+                    // At this point, the 'u1' variable actually contains U_{iter+1} (due to indexing differences).
                 }
+
+                // At this point, we're done iterating on this block, so copy the transformed block into retVal.
+                var numBytesToCopy = Math.Min(numBytesRemaining, newIndex.Length);
+                Buffer.BlockCopy(newIndex, 0, retVal, numBytesWritten, numBytesToCopy);
+                numBytesWritten += numBytesToCopy;
+                numBytesRemaining -= numBytesToCopy;
             }
 
             // retVal := T_1 || T_2 || ... || T_n, where T_n may be truncated to meet the desired output length
@@ -97,6 +99,7 @@ namespace Hashing
             var passwordBytes = Encoding.UTF8.GetBytes(password);
             try
             {
+                // ReSharper disable once ConvertSwitchStatementToSwitchExpression
                 switch (prf)
                 {
                     case KeyDerivationPrf.HMACSHA1:

@@ -8,14 +8,14 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-using System;
-using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
-
 namespace Hashing
 {
+    using System;
+    using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
+    using System.Security.Cryptography;
+    using System.Text;
+
     /// <summary>
     ///     Implements Pbkdf2 using <see cref="Rfc2898DeriveBytes" />.
     /// </summary>
@@ -37,7 +37,11 @@ namespace Hashing
         /// <param name="iterationCount">The iteration count.</param>
         /// <param name="numBytesRequested">The number of requested bytes.</param>
         /// <returns>A <see cref="T:byte[]" /> of the derived key data.</returns>
-        public static byte[] DeriveKey(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount,
+        public static byte[] DeriveKey(
+            string password,
+            byte[] salt,
+            KeyDerivationPrf prf,
+            int iterationCount,
             int numBytesRequested)
         {
             Debug.Assert(password != null, "Password != null");
@@ -47,10 +51,12 @@ namespace Hashing
 
             // ReSharper disable once ConvertIfStatementToReturnStatement
             if (salt.Length < 8)
+            {
                 // Rfc2898DeriveBytes enforces the 8 byte recommendation.
                 // To maintain compatibility, we call into ManagedPbkdf2Provider for salts shorter than 8 bytes
                 // because we can't use Rfc2898DeriveBytes with this salt.
                 return FallbackProvider.DeriveKey(password, salt, prf, iterationCount, numBytesRequested);
+            }
 
             return DeriveKeyImpl(password, salt, prf, iterationCount, numBytesRequested);
         }
@@ -64,10 +70,15 @@ namespace Hashing
         /// <param name="iterationCount">The iteration count.</param>
         /// <param name="numBytesRequested">The number of requested bytes.</param>
         /// <returns>A <see cref="T:byte[]" /> of the derived key data.</returns>
-        private static byte[] DeriveKeyImpl(string password, byte[] salt, KeyDerivationPrf prf, int iterationCount,
+        private static byte[] DeriveKeyImpl(
+            string password,
+            byte[] salt,
+            KeyDerivationPrf prf,
+            int iterationCount,
             int numBytesRequested)
         {
             HashAlgorithmName algorithmName;
+            // ReSharper disable once ConvertSwitchStatementToSwitchExpression
             switch (prf)
             {
                 case KeyDerivationPrf.HMACSHA1:
@@ -84,10 +95,8 @@ namespace Hashing
             }
 
             var passwordBytes = Encoding.UTF8.GetBytes(password);
-            using (var rfc = new Rfc2898DeriveBytes(passwordBytes, salt, iterationCount, algorithmName))
-            {
-                return rfc.GetBytes(numBytesRequested);
-            }
+            using var rfc = new Rfc2898DeriveBytes(passwordBytes, salt, iterationCount, algorithmName);
+            return rfc.GetBytes(numBytesRequested);
         }
     }
 }

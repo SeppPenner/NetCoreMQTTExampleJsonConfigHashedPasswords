@@ -1,23 +1,34 @@
-using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Security.Authentication;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using Hashing;
-using MQTTnet;
-using MQTTnet.Protocol;
-using MQTTnet.Server;
-using Newtonsoft.Json;
-using Serilog;
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="Program.cs" company="Haemmer Electronics">
+//   Copyright (c) 2020 All rights reserved.
+// </copyright>
+// <summary>
+//   The main program.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics.CodeAnalysis;
+    using System.IO;
+    using System.Linq;
+    using System.Reflection;
     using System.Runtime.Caching;
+    using System.Security.Authentication;
+    using System.Security.Cryptography.X509Certificates;
+    using System.Text;
 
+    using Hashing;
+
+    using MQTTnet;
+    using MQTTnet.Protocol;
+    using MQTTnet.Server;
+
+    using Newtonsoft.Json;
+
+    using Serilog;
 
     /// <summary>
     ///     The main program.
@@ -51,15 +62,14 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         {
             var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
             var certificate = new X509Certificate2(
+                // ReSharper disable once AssignNullToNotNullAttribute
                 Path.Combine(currentPath, "certificate.pfx"),
                 "test",
                 X509KeyStorageFlags.Exportable);
 
-            Log.Logger = new LoggerConfiguration()
-                .MinimumLevel.Debug()
-                .WriteTo.File(Path.Combine(currentPath,
-                    @"log\NetCoreMQTTExampleJsonConfigHashedPasswords_.txt"), rollingInterval: RollingInterval.Day)
-                .CreateLogger();
+            Log.Logger = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.File(
+                Path.Combine(currentPath, @"log\NetCoreMQTTExampleJsonConfigHashedPasswords_.txt"),
+                rollingInterval: RollingInterval.Day).CreateLogger();
 
             var config = ReadConfiguration(currentPath);
 
@@ -121,7 +131,9 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         else
                         {
                             if (!ClientIdPrefixesUsed.Contains(currentUser.ClientIdPrefix))
+                            {
                                 ClientIdPrefixesUsed.Add(currentUser.ClientIdPrefix);
+                            }
 
                             c.SessionItems.Add(currentUser.ClientIdPrefix, currentUser);
                         }
@@ -173,7 +185,10 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
                         {
                             var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
-                            if (!doesTopicMatch) continue;
+                            if (!doesTopicMatch)
+                            {
+                                continue;
+                            }
 
                             c.AcceptSubscription = false;
                             LogMessage(c, false);
@@ -184,7 +199,10 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
                         {
                             var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
-                            if (!doesTopicMatch) continue;
+                            if (!doesTopicMatch)
+                            {
+                                continue;
+                            }
 
                             c.AcceptSubscription = true;
                             LogMessage(c, true);
@@ -226,13 +244,13 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             if (payload != null)
                             {
                                 if (currentUser.MonthlyByteLimit != null)
-								{
-									if (IsUserThrottled(c.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
-									{
-										c.AcceptPublish = false;
-										return;
-									}
-								}
+                                {
+                                    if (IsUserThrottled(c.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
+                                    {
+                                        c.AcceptPublish = false;
+                                        return;
+                                    }
+                                }
                             }
                         }
 
@@ -253,7 +271,10 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         foreach (var forbiddenTopic in currentUser.PublishTopicLists.BlacklistTopics)
                         {
                             var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
-                            if (!doesTopicMatch) continue;
+                            if (!doesTopicMatch)
+                            {
+                                continue;
+                            }
 
                             c.AcceptPublish = false;
                             return;
@@ -263,7 +284,10 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                         foreach (var allowedTopic in currentUser.PublishTopicLists.WhitelistTopics)
                         {
                             var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
-                            if (!doesTopicMatch) continue;
+                            if (!doesTopicMatch)
+                            {
+                                continue;
+                            }
 
                             c.AcceptPublish = true;
                             LogMessage(c);
@@ -287,8 +311,12 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         {
             // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
             foreach (var clientIdPrefix in ClientIdPrefixesUsed)
+            {
                 if (clientId.StartsWith(clientIdPrefix))
+                {
                     return clientIdPrefix;
+                }
+            }
 
             return null;
         }
@@ -350,13 +378,14 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 
             var filePath = $"{currentPath}\\config.json";
 
-            if (!File.Exists(filePath)) return config;
-
-            using (var r = new StreamReader(filePath))
+            if (!File.Exists(filePath))
             {
-                var json = r.ReadToEnd();
-                config = JsonConvert.DeserializeObject<Config>(json);
+                return config;
             }
+
+            using var r = new StreamReader(filePath);
+            var json = r.ReadToEnd();
+            config = JsonConvert.DeserializeObject<Config>(json);
 
             return config;
         }
@@ -368,11 +397,11 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         /// <param name="successful">A <see cref="bool"/> value indicating whether the subscription was successful or not.</param> 
         private static void LogMessage(MqttSubscriptionInterceptorContext context, bool successful)
         {
-			if (context == null)
+            if (context == null)
             {
                 return;
             }
-			
+
             Log.Information(successful ? $"New subscription: ClientId = {context.ClientId}, TopicFilter = {context.TopicFilter}" : $"Subscription failed for clientId = {context.ClientId}, TopicFilter = {context.TopicFilter}");
         }
 
@@ -402,11 +431,11 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         /// <param name="showPassword">A <see cref="bool"/> value indicating whether the password is written to the log or not.</param> 
         private static void LogMessage(MqttConnectionValidatorContext context, bool showPassword)
         {
-			if (context == null)
+            if (context == null)
             {
                 return;
             }
-			
+
             if (showPassword)
             {
                 Log.Information(

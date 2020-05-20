@@ -1,7 +1,16 @@
-﻿using System;
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="DateTimeExtensions.cs" company="Haemmer Electronics">
+//   Copyright (c) 2020 All rights reserved.
+// </copyright>
+// <summary>
+//   A class that contains extension method for the <see cref="DateTime" /> data type.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
+    using System;
+
     /// <summary>
     /// A class that contains extension method for the <see cref="DateTime"/> data type.
     /// </summary>

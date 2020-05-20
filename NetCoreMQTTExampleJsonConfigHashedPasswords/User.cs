@@ -1,8 +1,22 @@
-﻿namespace NetCoreMQTTExampleJsonConfigHashedPasswords
+﻿// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="User.cs" company="Haemmer Electronics">
+//   Copyright (c) 2020 All rights reserved.
+// </copyright>
+// <summary>
+//   The <see cref="User" /> read from the config.json file.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
+
+namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
+    using System.Diagnostics.CodeAnalysis;
+
+    using Newtonsoft.Json;
+
     /// <summary>
     ///     The <see cref="User" /> read from the config.json file.
     /// </summary>
+    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
     public class User
     {
         /// <summary>
@@ -18,6 +32,7 @@
         /// <summary>
         ///     Gets or sets the password.
         /// </summary>
+        [JsonIgnore]
         public string Password { get; set; }
 
         /// <summary>

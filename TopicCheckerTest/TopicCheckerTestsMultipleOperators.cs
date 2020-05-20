@@ -1,8 +1,18 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using NetCoreMQTTExampleJsonConfigHashedPasswords;
+// --------------------------------------------------------------------------------------------------------------------
+// <copyright file="TopicCheckerTestsMultipleOperators.cs" company="Haemmer Electronics">
+//   Copyright (c) 2020 All rights reserved.
+// </copyright>
+// <summary>
+//   A test class to test the <see cref="TopicCheckerTest" /> with multiple operators.
+// </summary>
+// --------------------------------------------------------------------------------------------------------------------
 
 namespace TopicCheckerTest
 {
+    using Microsoft.VisualStudio.TestTools.UnitTesting;
+
+    using NetCoreMQTTExampleJsonConfigHashedPasswords;
+
     /// <summary>
     ///     A test class to test the <see cref="TopicCheckerTest" /> with multiple operators.
     /// </summary>
