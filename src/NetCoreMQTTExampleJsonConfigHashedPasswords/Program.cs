@@ -20,7 +20,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
     using System.Security.Cryptography.X509Certificates;
     using System.Text;
 
-    using Hashing;
+    using Microsoft.AspNetCore.Identity;
 
     using MQTTnet;
     using MQTTnet.Protocol;
@@ -36,9 +36,9 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
     public class Program
     {
         /// <summary>
-        ///     The <see cref="PasswordHasher"></see>.
+        ///     The <see cref="PasswordHasher{TUser}"></see>.
         /// </summary>
-        private static readonly PasswordHasher Hasher = new PasswordHasher();
+        private static readonly PasswordHasher<User> Hasher = new PasswordHasher<User>();
 
         /// <summary>
         ///     The client identifier prefixes that are currently used.
@@ -105,7 +105,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             return;
                         }
 
-                        var hashingResult = Hasher.VerifyHashedPassword(currentUser.Password, c.Password);
+                        var hashingResult = Hasher.VerifyHashedPassword(currentUser, currentUser.Password, c.Password);
 
                         if (hashingResult == PasswordVerificationResult.Failed)
                         {

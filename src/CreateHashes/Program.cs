@@ -12,7 +12,9 @@ namespace CreateHashes
     using System;
     using System.Diagnostics.CodeAnalysis;
 
-    using Hashing;
+    using Microsoft.AspNetCore.Identity;
+
+    using NetCoreMQTTExampleJsonConfigHashedPasswords;
 
     /// <summary>
     ///     This program can be used to generate hashes from a certain password to use in the config.json file.
@@ -28,8 +30,8 @@ namespace CreateHashes
         {
             Console.WriteLine("Please type in the password you want to hash:");
             var password = Console.ReadLine();
-            var hasher = new PasswordHasher();
-            var hashedPassword = hasher.HashPassword(password);
+            var hasher = new PasswordHasher<User>();
+            var hashedPassword = hasher.HashPassword(new User(), password);
             Console.WriteLine($"Your password hash is {hashedPassword}. Please copy this from the console.");
             Console.WriteLine("Press any key to close this window.");
             Console.ReadKey();

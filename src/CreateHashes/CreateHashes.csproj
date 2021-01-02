@@ -8,14 +8,15 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="GitVersionTask" Version="5.3.3">
+    <PackageReference Include="GitVersionTask" Version="5.5.1">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Hashing\Hashing.csproj" />
+    <ProjectReference Include="..\NetCoreMQTTExampleJsonConfigHashedPasswords\NetCoreMQTTExampleJsonConfigHashedPasswords.csproj" />
   </ItemGroup>
 
 </Project>
