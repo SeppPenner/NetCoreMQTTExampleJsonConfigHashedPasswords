@@ -11,15 +11,15 @@ The project was written and tested in .Net 5.0.
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://raw.githubusercontent.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/master/License.txt)
 [![Known Vulnerabilities](https://snyk.io/test/github/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/badge.svg)](https://snyk.io/test/github/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords)
 
-## How to use this project:
+## How to use this project
 1. Create your password hashes for each user using the `CreateHashes` project.
 2. Add the passwords and other data to the config.json file.
 
-## JSON configuration (Adjust this to your needs):
+## JSON configuration (Adjust this to your needs)
 
 Users can be defined in two different ways (The ways can be combined making sure that the client ids and client id prefixes need to be distinct for all of them, of course):
 
-### Exact definition (Matching exactly one client id):
+### Exact definition (Matching exactly one client id)
 
 ```json
 {
@@ -58,7 +58,7 @@ Users can be defined in two different ways (The ways can be combined making sure
 }
 ```
 
-### Various definition (Matching multiple client ids for one username and password combination):
+### Various definition (Matching multiple client ids for one username and password combination)
 
 ```json
 {
@@ -97,7 +97,7 @@ Users can be defined in two different ways (The ways can be combined making sure
 }
 ```
 
-### Various definition (Matching all client ids for one username and password combination):
+### Various definition (Matching all client ids for one username and password combination)
 
 ```json
 {
@@ -172,7 +172,7 @@ Example:
 }
 ```
 
-## Attention:
+## Attention
 * Only the following [UTF-8](https://www.utf8-chartable.de/unicode-utf8-table.pl) chars are supported for topics:
 
 |Unicode code point|character|UTF-8(hex.)|Name|
@@ -366,14 +366,14 @@ Example:
 |U+00FE|`þ`|c3 be|LATIN SMALL LETTER THORN|
 |U+00FF|`ÿ`|c3 bf|LATIN SMALL LETTER Y WITH DIAERESIS|
 
-## Password and Hash examples:
+## Password and Hash examples
 
 |Password|Hash|
 |-|-|
 |Test|AQAAAAEAACcQAAAAEKsbxxvBm/peZayW9Qmo9Rd1tRF4SLX4CQ6pNSrDSmCMWYf7o8Iy2pZCTA+No0fB8Q==|
 |Test|AQAAAAEAACcQAAAAECcnkwU+LImyVorjCCNzpTGgYOjVxFd+i/PW3MyU2sws80uPkPrppb+AXnvaxVI/0Q==|
 
-## Create an openssl certificate:
+## Create an openssl certificate
 ```bash
 openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
 openssl pkcs12 -export -out certificate.pfx -inkey key.pem -in cert.pem
