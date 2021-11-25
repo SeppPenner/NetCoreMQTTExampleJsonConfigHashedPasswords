@@ -1,5 +1,6 @@
 # Change history
 
+* **Version 1.0.7.0 (2021-11-25)** : Updated nuget packages, moved to Net 6.0.
 * **Version 1.0.6.0 (2021-01-02)** : Removed license year, moved changelog to extra file, adjusted folder structure, updated nuget packages, moved to Net 5.0.
 * **Version 1.0.5.0 (2020-02-03)** : Added possibility to lock users based on their data limit per month.
 * **Version 1.0.4.0 (2020-02-01)** : Updated nuget packages, moved to NetCore 3.1.

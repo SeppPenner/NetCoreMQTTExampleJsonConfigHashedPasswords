@@ -2,7 +2,6 @@ NetCoreMQTTExampleJsonConfigHashedPasswords
 ====================================
 
 NetCoreMQTTExampleJsonConfigHashedPasswords is a project to check user credentials and topic restrictions from [MQTTnet](https://github.com/chkr1011/MQTTnet) from a json config file using hashed user passwords.
-The project was written and tested in .Net 5.0.
 
 [![Build status](https://ci.appveyor.com/api/projects/status/ngv3j94bd6l0klba?svg=true)](https://ci.appveyor.com/project/SeppPenner/netcoremqttexamplejsonconfighashedpasswords)
 [![GitHub issues](https://img.shields.io/github/issues/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords.svg)](https://github.com/SeppPenner/NetCoreMQTTExampleJsonConfigHashedPasswords/issues)
