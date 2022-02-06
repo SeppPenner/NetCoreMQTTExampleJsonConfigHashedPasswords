@@ -9,47 +9,44 @@
 
 namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
-    using System.Diagnostics.CodeAnalysis;
-
     using Newtonsoft.Json;
 
     /// <summary>
     ///     The <see cref="User" /> read from the config.json file.
     /// </summary>
-    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
     public class User
     {
         /// <summary>
         ///     Gets or sets the user name.
         /// </summary>
-        public string UserName { get; set; }
+        public string UserName { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets the client identifier.
         /// </summary>
-        public string ClientId { get; set; }
+        public string ClientId { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets the password.
         /// </summary>
         [JsonIgnore]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         /// <summary>
         ///     Gets or sets the subscription topic lists.
         /// </summary>
-        public TopicTuple SubscriptionTopicLists { get; set; } = new TopicTuple();
+        public TopicTuple SubscriptionTopicLists { get; set; } = new();
 
         /// <summary>
         ///     Gets or sets the publish topic lists.
         /// </summary>
-        public TopicTuple PublishTopicLists { get; set; } = new TopicTuple();
+        public TopicTuple PublishTopicLists { get; set; } = new();
 
         /// <summary>
         ///     Gets or sets the client identifier prefix (This can be used to allow several client identifiers with the same
         ///     prefix for one username / password combination).
         /// </summary>
-        public string ClientIdPrefix { get; set; }
+        public string ClientIdPrefix { get; set; } = string.Empty;
 
         /// <summary> 
         /// Gets or sets a value indicating whether the client id is validated or not. 

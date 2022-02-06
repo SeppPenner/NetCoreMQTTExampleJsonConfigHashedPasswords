@@ -65,9 +65,8 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
             Justification = "Reviewed. Suppression is OK here.")]
         public static void Main(string[] args)
         {
-            var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+            var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             var certificate = new X509Certificate2(
-                // ReSharper disable once AssignNullToNotNullAttribute
                 Path.Combine(currentPath, "certificate.pfx"),
                 "test",
                 X509KeyStorageFlags.Exportable);
@@ -149,7 +148,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                     c =>
                     {
                         var clientIdPrefix = GetClientIdPrefix(c.ClientId);
-                        User currentUser;
+                        User? currentUser;
                         bool userFound;
 
                         if (clientIdPrefix == null)
@@ -163,7 +162,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             currentUser = currentUserObject as User;
                         }
 
-                        if (!userFound || currentUser == null)
+                        if (!userFound || currentUser is null)
                         {
                             c.AcceptSubscription = false;
                             LogMessage(c, false);
@@ -220,7 +219,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                     c =>
                     {
                         var clientIdPrefix = GetClientIdPrefix(c.ClientId);
-                        User currentUser;
+                        User? currentUser;
                         bool userFound;
 
                         if (clientIdPrefix == null)
@@ -234,7 +233,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                             currentUser = currentUserObject as User;
                         }
 
-                        if (!userFound || currentUser == null)
+                        if (!userFound || currentUser is null)
                         {
                             c.AcceptPublish = false;
                             return;
@@ -314,7 +313,6 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         /// <returns>The client id prefix for a client id if there is one or <c>null</c> else.</returns>
         private static string GetClientIdPrefix(string clientId)
         {
-            // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
             foreach (var clientIdPrefix in ClientIdPrefixesUsed)
             {
                 if (clientId.StartsWith(clientIdPrefix))
@@ -323,7 +321,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                 }
             }
 
-            return null;
+            return string.Empty;
         }
 
         /// <summary>
@@ -337,7 +335,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         {
             var foundUserInCache = DataLimitCacheMonth.GetCacheItem(clientId);
 
-            if (foundUserInCache == null)
+            if (foundUserInCache is null)
             {
                 DataLimitCacheMonth.Add(clientId, sizeInBytes, DateTimeOffset.Now.EndOfCurrentMonth());
 
@@ -390,7 +388,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 
             using var r = new StreamReader(filePath);
             var json = r.ReadToEnd();
-            config = JsonConvert.DeserializeObject<Config>(json);
+            config = JsonConvert.DeserializeObject<Config>(json) ?? new();
 
             return config;
         }
@@ -426,7 +424,7 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
                 return;
             }
 
-            var payload = context.ApplicationMessage?.Payload == null ? null : Encoding.UTF8.GetString(context.ApplicationMessage?.Payload);
+            var payload = context.ApplicationMessage?.Payload == null ? null : Encoding.UTF8.GetString(context.ApplicationMessage.Payload);
 
             Logger.Information(
                 "Message: ClientId = {@ClientId}, Topic = {@Topic}, Payload = {@Payload}, QoS = {@Qos}, Retain-Flag = {@RetainFlag}",
