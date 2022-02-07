@@ -11,7 +11,6 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
 {
     using System;
     using System.Collections.Generic;
-    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Linq;
     using System.Reflection;
@@ -59,10 +58,6 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords
         ///     The main method that starts the service.
         /// </summary>
         /// <param name="args">Some arguments. Currently unused.</param>
-        [SuppressMessage(
-            "StyleCop.CSharp.DocumentationRules",
-            "SA1650:ElementDocumentationMustBeSpelledCorrectly",
-            Justification = "Reviewed. Suppression is OK here.")]
         public static void Main(string[] args)
         {
             var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;

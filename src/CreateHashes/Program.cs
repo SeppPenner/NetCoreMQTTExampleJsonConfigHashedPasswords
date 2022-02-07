@@ -10,7 +10,6 @@
 namespace CreateHashes
 {
     using System;
-    using System.Diagnostics.CodeAnalysis;
 
     using Microsoft.AspNetCore.Identity;
 
@@ -19,7 +18,6 @@ namespace CreateHashes
     /// <summary>
     ///     This program can be used to generate hashes from a certain password to use in the config.json file.
     /// </summary>
-    [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1650:ElementDocumentationMustBeSpelledCorrectly", Justification = "Reviewed. Suppression is OK here.")]
     public class Program
     {
         /// <summary>
