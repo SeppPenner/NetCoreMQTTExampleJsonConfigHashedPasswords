@@ -1,4 +1,4 @@
-﻿// --------------------------------------------------------------------------------------------------------------------
+// --------------------------------------------------------------------------------------------------------------------
 // <copyright file="TopicChecker.cs" company="Hämmer Electronics">
 //   Copyright (c) 2020 All rights reserved.
 // </copyright>
@@ -7,71 +7,65 @@
 // </summary>
 // --------------------------------------------------------------------------------------------------------------------
 
-namespace NetCoreMQTTExampleJsonConfigHashedPasswords
+namespace NetCoreMQTTExampleJsonConfigHashedPasswords;
+
+/// <summary>
+///     A class to test the topics validity.
+/// </summary>
+public static class TopicChecker
 {
-    using System;
-    using System.Linq;
-    using System.Text.RegularExpressions;
-
     /// <summary>
-    ///     A class to test the topics validity.
+    ///     Does a regex check on the topics.
     /// </summary>
-    public static class TopicChecker
+    /// <param name="allowedTopic">The allowed topic.</param>
+    /// <param name="topic">The topic.</param>
+    /// <returns><c>true</c> if the topic is valid, <c>false</c> if not.</returns>
+    public static bool Regex(string allowedTopic, string topic)
     {
-        /// <summary>
-        ///     Does a regex check on the topics.
-        /// </summary>
-        /// <param name="allowedTopic">The allowed topic.</param>
-        /// <param name="topic">The topic.</param>
-        /// <returns><c>true</c> if the topic is valid, <c>false</c> if not.</returns>
-        public static bool Regex(string allowedTopic, string topic)
+        // Check if the topics match directly
+        if (allowedTopic == topic)
         {
-            // Check if the topics match directly
-            if (allowedTopic == topic)
-            {
-                return true;
-            }
+            return true;
+        }
 
-            // Check if there is more than one cross in the topic
-            var crossCountTopic = topic.Count(c => c == '#');
-            if (crossCountTopic > 1)
+        // Check if there is more than one cross in the topic
+        var crossCountTopic = topic.Count(c => c == '#');
+        if (crossCountTopic > 1)
+        {
+            return false;
+        }
+
+        // If the cross count is 1 in the topic
+        if (crossCountTopic == 1)
+        {
+            // Check if the cross is the last char in the topic
+            var index = topic.IndexOf("#", StringComparison.Ordinal);
+
+            if (index != topic.Length - 1)
             {
                 return false;
             }
-
-            // If the cross count is 1 in the topic
-            if (crossCountTopic == 1)
-            {
-                // Check if the cross is the last char in the topic
-                var index = topic.IndexOf("#", StringComparison.Ordinal);
-
-                if (index != topic.Length - 1)
-                {
-                    return false;
-                }
-            }
-
-            // Else do a regex replace
-            var realTopicRegex = allowedTopic.Replace(@"/", @"\/").Replace(
-                    "+",
-                    @"[!""$%&'()*,\-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz{\|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ]*")
-                .Replace(
-                    "#",
-                    @"[!""$%&'()*+#,\-.\/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz{\|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ]*");
-
-            var regex = new Regex(realTopicRegex);
-            var matches = regex.Matches(topic);
-
-            // ReSharper disable once ForeachCanBeConvertedToQueryUsingAnotherGetEnumerator
-            foreach (var match in matches.ToList())
-            {
-                if (match.Value == topic)
-                {
-                    return true;
-                }
-            }
-
-            return false;
         }
+
+        // Else do a regex replace
+        var realTopicRegex = allowedTopic.Replace(@"/", @"\/").Replace(
+                "+",
+                @"[!""$%&'()*,\-.0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz{\|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ]*")
+            .Replace(
+                "#",
+                @"[!""$%&'()*+#,\-.\/0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ\[\\\]\^_`abcdefghijklmnopqrstuvwxyz{\|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐÑÒÓÔÕÖ×ØÙÚÛÜÝÞßàáâãäåæçèéêëìíîïðñòóôõö÷øùúûüýþÿ]*");
+
+        var regex = new Regex(realTopicRegex);
+        var matches = regex.Matches(topic);
+
+        foreach (var match in matches.ToList())
+        {
+            if (match.Value == topic)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
