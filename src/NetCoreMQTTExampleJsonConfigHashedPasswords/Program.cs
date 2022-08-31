@@ -35,6 +35,11 @@ public class Program
     private static readonly ILogger Logger = Log.ForContext<Program>();
 
     /// <summary>
+    /// The configuration.
+    /// </summary>
+    private static Config config = new();
+
+    /// <summary>
     ///     The main method that starts the service.
     /// </summary>
     /// <param name="args">Some arguments. Currently unused.</param>
@@ -50,7 +55,7 @@ public class Program
             Path.Combine(currentPath, @"log\NetCoreMQTTExampleJsonConfigHashedPasswords_.txt"),
             rollingInterval: RollingInterval.Day).CreateLogger();
 
-        var config = ReadConfiguration(currentPath);
+        config = ReadConfiguration(currentPath);
 
         var optionsBuilder = new MqttServerOptionsBuilder()
 #if DEBUG
@@ -60,221 +65,272 @@ public class Program
 #endif
                 .WithEncryptedEndpoint().WithEncryptedEndpointPort(config.Port)
             .WithEncryptionCertificate(certificate.Export(X509ContentType.Pfx))
-            .WithEncryptionSslProtocol(SslProtocols.Tls12).WithConnectionValidator(
-                c =>
-                {
-                    var currentUser = config.Users.FirstOrDefault(u => u.UserName == c.Username);
+            .WithEncryptionSslProtocol(SslProtocols.Tls12);
 
-                    if (currentUser is null)
-                    {
-                        c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                        LogMessage(c, true);
-                        return;
-                    }
-
-                    if (c.Username != currentUser.UserName)
-                    {
-                        c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                        LogMessage(c, true);
-                        return;
-                    }
-
-                    var hashingResult = Hasher.VerifyHashedPassword(currentUser, currentUser.Password, c.Password);
-
-                    if (hashingResult == PasswordVerificationResult.Failed)
-                    {
-                        c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                        LogMessage(c, true);
-                        return;
-                    }
-
-                    if (!currentUser.ValidateClientId)
-                    {
-                        c.ReasonCode = MqttConnectReasonCode.Success;
-                        c.SessionItems.Add(c.ClientId, currentUser);
-                        LogMessage(c, false);
-                        return;
-                    }
-
-                    if (string.IsNullOrWhiteSpace(currentUser.ClientIdPrefix))
-                    {
-                        if (c.ClientId != currentUser.ClientId)
-                        {
-                            c.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                            LogMessage(c, true);
-                            return;
-                        }
-
-                        c.SessionItems.Add(currentUser.ClientId, currentUser);
-                    }
-                    else
-                    {
-                        if (!ClientIdPrefixesUsed.Contains(currentUser.ClientIdPrefix))
-                        {
-                            ClientIdPrefixesUsed.Add(currentUser.ClientIdPrefix);
-                        }
-
-                        c.SessionItems.Add(currentUser.ClientIdPrefix, currentUser);
-                    }
-
-                    c.ReasonCode = MqttConnectReasonCode.Success;
-                    LogMessage(c, false);
-                }).WithSubscriptionInterceptor(
-                c =>
-                {
-                    var clientIdPrefix = GetClientIdPrefix(c.ClientId);
-                    User? currentUser;
-                    bool userFound;
-
-                    if (clientIdPrefix is null)
-                    {
-                        userFound = c.SessionItems.TryGetValue(c.ClientId, out var currentUserObject);
-                        currentUser = currentUserObject as User;
-                    }
-                    else
-                    {
-                        userFound = c.SessionItems.TryGetValue(clientIdPrefix, out var currentUserObject);
-                        currentUser = currentUserObject as User;
-                    }
-
-                    if (!userFound || currentUser is null)
-                    {
-                        c.AcceptSubscription = false;
-                        LogMessage(c, false);
-                        return;
-                    }
-
-                    var topic = c.TopicFilter.Topic;
-
-                    if (currentUser.SubscriptionTopicLists.BlacklistTopics.Contains(topic))
-                    {
-                        c.AcceptSubscription = false;
-                        LogMessage(c, false);
-                        return;
-                    }
-
-                    if (currentUser.SubscriptionTopicLists.WhitelistTopics.Contains(topic))
-                    {
-                        c.AcceptSubscription = true;
-                        LogMessage(c, true);
-                        return;
-                    }
-
-                    foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
-                    {
-                        var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
-                        if (!doesTopicMatch)
-                        {
-                            continue;
-                        }
-
-                        c.AcceptSubscription = false;
-                        LogMessage(c, false);
-                        return;
-                    }
-
-                    foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
-                    {
-                        var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
-                        if (!doesTopicMatch)
-                        {
-                            continue;
-                        }
-
-                        c.AcceptSubscription = true;
-                        LogMessage(c, true);
-                        return;
-                    }
-
-                    c.AcceptSubscription = false;
-                    LogMessage(c, false);
-                }).WithApplicationMessageInterceptor(
-                c =>
-                {
-                    var clientIdPrefix = GetClientIdPrefix(c.ClientId);
-                    User? currentUser;
-                    bool userFound;
-
-                    if (clientIdPrefix is null)
-                    {
-                        userFound = c.SessionItems.TryGetValue(c.ClientId, out var currentUserObject);
-                        currentUser = currentUserObject as User;
-                    }
-                    else
-                    {
-                        userFound = c.SessionItems.TryGetValue(clientIdPrefix, out var currentUserObject);
-                        currentUser = currentUserObject as User;
-                    }
-
-                    if (!userFound || currentUser is null)
-                    {
-                        c.AcceptPublish = false;
-                        return;
-                    }
-
-                    var topic = c.ApplicationMessage.Topic;
-
-                    if (currentUser.ThrottleUser)
-                    {
-                        var payload = c.ApplicationMessage?.Payload;
-
-                        if (payload != null)
-                        {
-                            if (currentUser.MonthlyByteLimit != null)
-                            {
-                                if (IsUserThrottled(c.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
-                                {
-                                    c.AcceptPublish = false;
-                                    return;
-                                }
-                            }
-                        }
-                    }
-
-                    if (currentUser.PublishTopicLists.BlacklistTopics.Contains(topic))
-                    {
-                        c.AcceptPublish = false;
-                        return;
-                    }
-
-                    if (currentUser.PublishTopicLists.WhitelistTopics.Contains(topic))
-                    {
-                        c.AcceptPublish = true;
-                        LogMessage(c);
-                        return;
-                    }
-
-                    foreach (var forbiddenTopic in currentUser.PublishTopicLists.BlacklistTopics)
-                    {
-                        var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
-                        if (!doesTopicMatch)
-                        {
-                            continue;
-                        }
-
-                        c.AcceptPublish = false;
-                        return;
-                    }
-
-                    foreach (var allowedTopic in currentUser.PublishTopicLists.WhitelistTopics)
-                    {
-                        var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
-                        if (!doesTopicMatch)
-                        {
-                            continue;
-                        }
-
-                        c.AcceptPublish = true;
-                        LogMessage(c);
-                        return;
-                    }
-
-                    c.AcceptPublish = false;
-                });
-
-        var mqttServer = new MqttFactory().CreateMqttServer();
-        mqttServer.StartAsync(optionsBuilder.Build());
+        var mqttServer = new MqttFactory().CreateMqttServer(optionsBuilder.Build());
+        mqttServer.ValidatingConnectionAsync += ValidateConnectionAsync;
+        mqttServer.InterceptingSubscriptionAsync += InterceptSubscriptionAsync;
+        mqttServer.InterceptingPublishAsync += InterceptApplicationMessagePublishAsync;
+        mqttServer.StartAsync();
         Console.ReadLine();
+    }
+
+    /// <summary>
+    /// Validates the MQTT connection.
+    /// </summary>
+    /// <param name="args">The arguments.</param>
+    private static Task ValidateConnectionAsync(ValidatingConnectionEventArgs args)
+    {
+        try
+        {
+            var currentUser = config.Users.FirstOrDefault(u => u.UserName == args.UserName);
+
+            if (currentUser is null)
+            {
+                args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                LogMessage(args, true);
+                return Task.CompletedTask;
+            }
+
+            if (args.UserName != currentUser.UserName)
+            {
+                args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                LogMessage(args, true);
+                return Task.CompletedTask;
+            }
+
+            var hashingResult = Hasher.VerifyHashedPassword(currentUser, currentUser.Password, args.Password);
+
+            if (hashingResult == PasswordVerificationResult.Failed)
+            {
+                args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                LogMessage(args, true);
+                return Task.CompletedTask;
+            }
+
+            if (!currentUser.ValidateClientId)
+            {
+                args.ReasonCode = MqttConnectReasonCode.Success;
+                args.SessionItems.Add(args.ClientId, currentUser);
+                LogMessage(args, false);
+                return Task.CompletedTask;
+            }
+
+            if (string.IsNullOrWhiteSpace(currentUser.ClientIdPrefix))
+            {
+                if (args.ClientId != currentUser.ClientId)
+                {
+                    args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                    LogMessage(args, true);
+                    return Task.CompletedTask;
+                }
+
+                args.SessionItems.Add(currentUser.ClientId, currentUser);
+            }
+            else
+            {
+                if (!ClientIdPrefixesUsed.Contains(currentUser.ClientIdPrefix))
+                {
+                    ClientIdPrefixesUsed.Add(currentUser.ClientIdPrefix);
+                }
+
+                args.SessionItems.Add(currentUser.ClientIdPrefix, currentUser);
+            }
+
+            args.ReasonCode = MqttConnectReasonCode.Success;
+            LogMessage(args, false);
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("An error occurred: {Exception}.", ex);
+            return Task.FromException(ex);
+        }
+    }
+
+    /// <summary>
+    /// Validates the MQTT subscriptions.
+    /// </summary>
+    /// <param name="args">The arguments.</param>
+    private static Task InterceptSubscriptionAsync(InterceptingSubscriptionEventArgs args)
+    {
+        try
+        {
+            var clientIdPrefix = GetClientIdPrefix(args.ClientId);
+            User? currentUser = null;
+
+            if (string.IsNullOrWhiteSpace(clientIdPrefix))
+            {
+                if (args.SessionItems.Contains(args.ClientId))
+                {
+                    currentUser = args.SessionItems[args.ClientId] as User;
+                }
+            }
+            else
+            {
+                if (args.SessionItems.Contains(clientIdPrefix))
+                {
+                    currentUser = args.SessionItems[clientIdPrefix] as User;
+                }
+            }
+
+            if (currentUser is null)
+            {
+                args.ProcessSubscription = false;
+                LogMessage(args, false);
+                return Task.CompletedTask;
+            }
+
+            var topic = args.TopicFilter.Topic;
+
+            if (currentUser.SubscriptionTopicLists.BlacklistTopics.Contains(topic))
+            {
+                args.ProcessSubscription = false;
+                LogMessage(args, false);
+                return Task.CompletedTask;
+            }
+
+            if (currentUser.SubscriptionTopicLists.WhitelistTopics.Contains(topic))
+            {
+                args.ProcessSubscription = true;
+                LogMessage(args, true);
+                return Task.CompletedTask;
+            }
+
+            foreach (var forbiddenTopic in currentUser.SubscriptionTopicLists.BlacklistTopics)
+            {
+                var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
+                if (!doesTopicMatch)
+                {
+                    continue;
+                }
+
+                args.ProcessSubscription = false;
+                LogMessage(args, false);
+                return Task.CompletedTask;
+            }
+
+            foreach (var allowedTopic in currentUser.SubscriptionTopicLists.WhitelistTopics)
+            {
+                var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
+                if (!doesTopicMatch)
+                {
+                    continue;
+                }
+
+                args.ProcessSubscription = true;
+                LogMessage(args, true);
+                return Task.CompletedTask;
+            }
+
+            args.ProcessSubscription = false;
+            LogMessage(args, false);
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("An error occurred: {Exception}.", ex);
+            return Task.FromException(ex);
+        }
+    }
+
+    /// <summary>
+    /// Validates the MQTT application messages.
+    /// </summary>
+    /// <param name="args">The arguments.</param>
+    private static Task InterceptApplicationMessagePublishAsync(InterceptingPublishEventArgs args)
+    {
+        try
+        {
+            var clientIdPrefix = GetClientIdPrefix(args.ClientId);
+            User? currentUser = null;
+
+            if (string.IsNullOrWhiteSpace(clientIdPrefix))
+            {
+                if (args.SessionItems.Contains(args.ClientId))
+                {
+                    currentUser = args.SessionItems[args.ClientId] as User;
+                }
+            }
+            else
+            {
+                if (args.SessionItems.Contains(clientIdPrefix))
+                {
+                    currentUser = args.SessionItems[clientIdPrefix] as User;
+                }
+            }
+
+            if (currentUser is null)
+            {
+                args.ProcessPublish = false;
+                return Task.CompletedTask;
+            }
+
+            var topic = args.ApplicationMessage.Topic;
+
+            if (currentUser.ThrottleUser)
+            {
+                var payload = args.ApplicationMessage?.Payload;
+
+                if (payload != null)
+                {
+                    if (currentUser.MonthlyByteLimit != null)
+                    {
+                        if (IsUserThrottled(args.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
+                        {
+                            args.ProcessPublish = false;
+                            return Task.CompletedTask;
+                        }
+                    }
+                }
+            }
+
+            if (currentUser.PublishTopicLists.BlacklistTopics.Contains(topic))
+            {
+                args.ProcessPublish = false;
+                return Task.CompletedTask;
+            }
+
+            if (currentUser.PublishTopicLists.WhitelistTopics.Contains(topic))
+            {
+                args.ProcessPublish = true;
+                LogMessage(args);
+                return Task.CompletedTask;
+            }
+
+            foreach (var forbiddenTopic in currentUser.PublishTopicLists.BlacklistTopics)
+            {
+                var doesTopicMatch = TopicChecker.Regex(forbiddenTopic, topic);
+                if (!doesTopicMatch)
+                {
+                    continue;
+                }
+
+                args.ProcessPublish = false;
+                return Task.CompletedTask;
+            }
+
+            foreach (var allowedTopic in currentUser.PublishTopicLists.WhitelistTopics)
+            {
+                var doesTopicMatch = TopicChecker.Regex(allowedTopic, topic);
+                if (!doesTopicMatch)
+                {
+                    continue;
+                }
+
+                args.ProcessPublish = true;
+                LogMessage(args);
+                return Task.CompletedTask;
+            }
+
+            args.ProcessPublish = false;
+            return Task.CompletedTask;
+        }
+        catch (Exception ex)
+        {
+            Logger.Error("An error occurred: {Exception}.", ex);
+            return Task.FromException(ex);
+        }
     }
 
     /// <summary>
@@ -367,11 +423,11 @@ public class Program
     /// <summary> 
     ///     Logs the message from the MQTT subscription interceptor context. 
     /// </summary> 
-    /// <param name="context">The MQTT subscription interceptor context.</param> 
+    /// <param name="args">The arguments.</param>
     /// <param name="successful">A <see cref="bool"/> value indicating whether the subscription was successful or not.</param> 
-    private static void LogMessage(MqttSubscriptionInterceptorContext context, bool successful)
+    private static void LogMessage(InterceptingSubscriptionEventArgs args, bool successful)
     {
-        if (context is null)
+        if (args is null)
         {
             return;
         }
@@ -380,40 +436,40 @@ public class Program
             successful
                 ? "New subscription: ClientId = {@ClientId}, TopicFilter = {@TopicFilter}"
                 : "Subscription failed for clientId = {@ClientId}, TopicFilter = {@TopicFilter}",
-            context.ClientId,
-            context.TopicFilter);
+            args.ClientId,
+            args.TopicFilter);
     }
 
     /// <summary>
     ///     Logs the message from the MQTT message interceptor context.
     /// </summary>
-    /// <param name="context">The MQTT message interceptor context.</param>
-    private static void LogMessage(MqttApplicationMessageInterceptorContext context)
+    /// <param name="args">The arguments.</param>
+    private static void LogMessage(InterceptingPublishEventArgs args)
     {
-        if (context is null)
+        if (args is null)
         {
             return;
         }
 
-        var payload = context.ApplicationMessage?.Payload is null ? null : Encoding.UTF8.GetString(context.ApplicationMessage.Payload);
+        var payload = args.ApplicationMessage?.Payload is null ? null : Encoding.UTF8.GetString(args.ApplicationMessage.Payload);
 
         Logger.Information(
             "Message: ClientId = {@ClientId}, Topic = {@Topic}, Payload = {@Payload}, QoS = {@Qos}, Retain-Flag = {@RetainFlag}",
-            context.ClientId,
-            context.ApplicationMessage?.Topic,
+            args.ClientId,
+            args.ApplicationMessage?.Topic,
             payload,
-            context.ApplicationMessage?.QualityOfServiceLevel,
-            context.ApplicationMessage?.Retain);
+            args.ApplicationMessage?.QualityOfServiceLevel,
+            args.ApplicationMessage?.Retain);
     }
 
     /// <summary> 
     ///     Logs the message from the MQTT connection validation context. 
     /// </summary> 
-    /// <param name="context">The MQTT connection validation context.</param> 
+    /// <param name="args">The arguments.</param>
     /// <param name="showPassword">A <see cref="bool"/> value indicating whether the password is written to the log or not.</param> 
-    private static void LogMessage(MqttConnectionValidatorContext context, bool showPassword)
+    private static void LogMessage(ValidatingConnectionEventArgs args, bool showPassword)
     {
-        if (context is null)
+        if (args is null)
         {
             return;
         }
@@ -422,20 +478,20 @@ public class Program
         {
             Logger.Information(
                 "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, Password = {@Password}, CleanSession = {@CleanSession}",
-                context.ClientId,
-                context.Endpoint,
-                context.Username,
-                context.Password,
-                context.CleanSession);
+                args.ClientId,
+                args.Endpoint,
+                args.UserName,
+                args.Password,
+                args.CleanSession);
         }
         else
         {
             Logger.Information(
                 "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, CleanSession = {@CleanSession}",
-                context.ClientId,
-                context.Endpoint,
-                context.Username,
-                context.CleanSession);
+                args.ClientId,
+                args.Endpoint,
+                args.UserName,
+                args.CleanSession);
         }
     }
 }
