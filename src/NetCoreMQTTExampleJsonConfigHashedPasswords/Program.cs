@@ -275,13 +275,13 @@ public class Program
 
             if (currentUser.ThrottleUser)
             {
-                var payload = args.ApplicationMessage?.Payload;
+                var payload = args.ApplicationMessage?.PayloadSegment;
 
-                if (payload != null)
+                if (payload is not null)
                 {
-                    if (currentUser.MonthlyByteLimit != null)
+                    if (currentUser.MonthlyByteLimit is not null)
                     {
-                        if (IsUserThrottled(args.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
+                        if (IsUserThrottled(args.ClientId, payload.Value.Count, currentUser.MonthlyByteLimit.Value))
                         {
                             args.ProcessPublish = false;
                             return Task.CompletedTask;
@@ -437,12 +437,14 @@ public class Program
             return;
         }
 
+#pragma warning disable Serilog004 // Constant MessageTemplate verifier
         Logger.Information(
             successful
                 ? "New subscription: ClientId = {@ClientId}, TopicFilter = {@TopicFilter}"
                 : "Subscription failed for clientId = {@ClientId}, TopicFilter = {@TopicFilter}",
             args.ClientId,
             args.TopicFilter);
+#pragma warning restore Serilog004 // Constant MessageTemplate verifier
     }
 
     /// <summary>
@@ -456,7 +458,7 @@ public class Program
             return;
         }
 
-        var payload = args.ApplicationMessage?.Payload is null ? null : Encoding.UTF8.GetString(args.ApplicationMessage.Payload);
+        var payload = args.ApplicationMessage?.PayloadSegment is null ? null : Encoding.UTF8.GetString(args.ApplicationMessage.PayloadSegment);
 
         Logger.Information(
             "Message: ClientId = {@ClientId}, Topic = {@Topic}, Payload = {@Payload}, QoS = {@Qos}, Retain-Flag = {@RetainFlag}",

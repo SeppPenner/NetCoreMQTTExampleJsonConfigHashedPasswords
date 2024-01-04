@@ -21,6 +21,13 @@ public class Program
     {
         Console.WriteLine("Please type in the password you want to hash:");
         var password = Console.ReadLine();
+
+        while (string.IsNullOrWhiteSpace(password))
+        {
+            Console.WriteLine("Please type in the password you want to hash:");
+            password = Console.ReadLine();
+        }
+
         var hasher = new PasswordHasher<User>();
         var hashedPassword = hasher.HashPassword(new User(), password);
         Console.WriteLine($"Your password hash is {hashedPassword}. Please copy this from the console.");
