@@ -12,20 +12,20 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords;
 /// <summary>
 ///     The main program.
 /// </summary>
-public class Program
+public sealed class Program
 {
     /// <summary>
-    ///     The <see cref="PasswordHasher{TUser}"></see>.
+    /// The <see cref="PasswordHasher{TUser}"></see>.
     /// </summary>
     private static readonly PasswordHasher<User> Hasher = new();
 
     /// <summary>
-    ///     The client identifier prefixes that are currently used.
+    /// The client identifier prefixes that are currently used.
     /// </summary>
     private static readonly List<string> ClientIdPrefixesUsed = new();
 
     /// <summary>
-    /// Gets or sets the data limit cache for throttling for monthly data.
+    /// The data limit cache for throttling for monthly data.
     /// </summary>
     private static readonly MemoryCache DataLimitCacheMonth = MemoryCache.Default;
 
@@ -33,6 +33,11 @@ public class Program
     /// The logger.
     /// </summary>
     private static readonly ILogger Logger = Log.ForContext<Program>();
+
+    /// <summary>
+    /// The client identifiers.
+    /// </summary>
+    private static readonly HashSet<string> clientIds = new();
 
     /// <summary>
     /// The configuration.
@@ -64,11 +69,11 @@ public class Program
 
         var optionsBuilder = new MqttServerOptionsBuilder()
 #if DEBUG
-                .WithDefaultEndpoint().WithDefaultEndpointPort(1883)
+            .WithDefaultEndpoint().WithDefaultEndpointPort(1883)
 #else
-                .WithoutDefaultEndpoint()
+            .WithoutDefaultEndpoint()
 #endif
-                .WithEncryptedEndpoint().WithEncryptedEndpointPort(config.Port)
+            .WithEncryptedEndpoint().WithEncryptedEndpointPort(config.Port)
             .WithEncryptionCertificate(certificate.Export(X509ContentType.Pfx))
             .WithEncryptionSslProtocol(SslProtocols.Tls12);
 
@@ -76,6 +81,7 @@ public class Program
         mqttServer.ValidatingConnectionAsync += ValidateConnectionAsync;
         mqttServer.InterceptingSubscriptionAsync += InterceptSubscriptionAsync;
         mqttServer.InterceptingPublishAsync += InterceptApplicationMessagePublishAsync;
+        mqttServer.ClientDisconnectedAsync += ClientDisconnectedAsync;
         mqttServer.StartAsync();
         Console.ReadLine();
     }
@@ -88,6 +94,19 @@ public class Program
     {
         try
         {
+            if (string.IsNullOrWhiteSpace(args.UserName))
+            {
+                args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                return Task.CompletedTask;
+            }
+
+            if (clientIds.TryGetValue(args.ClientId, out var _))
+            {
+                args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
+                Logger.Warning("A client with client id {ClientId} is already connected", args.ClientId);
+                return Task.CompletedTask;
+            }
+
             var currentUser = config.Users.FirstOrDefault(u => u.UserName == args.UserName);
 
             if (currentUser is null)
@@ -125,7 +144,7 @@ public class Program
             {
                 if (args.ClientId != currentUser.ClientId)
                 {
-                    args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                    args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
                     LogMessage(args, true);
                     return Task.CompletedTask;
                 }
@@ -336,6 +355,16 @@ public class Program
             Logger.Error("An error occurred: {Exception}.", ex);
             return Task.FromException(ex);
         }
+    }
+
+    /// <summary>
+    /// Handles the client connected event.
+    /// </summary>
+    /// <param name="args">The arguments.</param>
+    private static async Task ClientDisconnectedAsync(ClientDisconnectedEventArgs args)
+    {
+        clientIds.Remove(args.ClientId);
+        await Task.Delay(1);
     }
 
     /// <summary>
