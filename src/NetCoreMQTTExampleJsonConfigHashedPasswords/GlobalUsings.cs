@@ -8,7 +8,6 @@ global using System.Text.RegularExpressions;
 
 global using Microsoft.AspNetCore.Identity;
 
-global using MQTTnet;
 global using MQTTnet.Protocol;
 global using MQTTnet.Server;
 

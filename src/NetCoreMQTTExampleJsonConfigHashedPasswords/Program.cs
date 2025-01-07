@@ -77,7 +77,7 @@ public sealed class Program
             .WithEncryptionCertificate(certificate.Export(X509ContentType.Pfx))
             .WithEncryptionSslProtocol(SslProtocols.Tls12);
 
-        var mqttServer = new MqttFactory().CreateMqttServer(optionsBuilder.Build());
+        var mqttServer = new MqttServerFactory().CreateMqttServer(optionsBuilder.Build());
         mqttServer.ValidatingConnectionAsync += ValidateConnectionAsync;
         mqttServer.InterceptingSubscriptionAsync += InterceptSubscriptionAsync;
         mqttServer.InterceptingPublishAsync += InterceptApplicationMessagePublishAsync;
@@ -294,17 +294,14 @@ public sealed class Program
 
             if (currentUser.ThrottleUser)
             {
-                var payload = args.ApplicationMessage?.PayloadSegment;
+                var payload = args.ApplicationMessage.Payload;
 
-                if (payload is not null)
+                if (currentUser.MonthlyByteLimit is not null)
                 {
-                    if (currentUser.MonthlyByteLimit is not null)
+                    if (IsUserThrottled(args.ClientId, payload.Length, currentUser.MonthlyByteLimit.Value))
                     {
-                        if (IsUserThrottled(args.ClientId, payload.Value.Count, currentUser.MonthlyByteLimit.Value))
-                        {
-                            args.ProcessPublish = false;
-                            return Task.CompletedTask;
-                        }
+                        args.ProcessPublish = false;
+                        return Task.CompletedTask;
                     }
                 }
             }
@@ -487,7 +484,7 @@ public sealed class Program
             return;
         }
 
-        var payload = args.ApplicationMessage?.PayloadSegment is null ? null : Encoding.UTF8.GetString(args.ApplicationMessage.PayloadSegment);
+        var payload = Encoding.UTF8.GetString(args.ApplicationMessage.Payload);
 
         Logger.Information(
             "Message: ClientId = {@ClientId}, Topic = {@Topic}, Payload = {@Payload}, QoS = {@Qos}, Retain-Flag = {@RetainFlag}",
@@ -515,7 +512,7 @@ public sealed class Program
             Logger.Information(
                 "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, Password = {@Password}, CleanSession = {@CleanSession}",
                 args.ClientId,
-                args.Endpoint,
+                args.RemoteEndPoint,
                 args.UserName,
                 args.Password,
                 args.CleanSession);
@@ -525,7 +522,7 @@ public sealed class Program
             Logger.Information(
                 "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, CleanSession = {@CleanSession}",
                 args.ClientId,
-                args.Endpoint,
+                args.RemoteEndPoint,
                 args.UserName,
                 args.CleanSession);
         }
