@@ -15,12 +15,13 @@ namespace NetCoreMQTTExampleJsonConfigHashedPasswords;
 public static class DateTimeExtensions
 {
     /// <summary>
-    /// Gets the time zone offset of the local time zone.
+    /// Gets the time zone offset of the local time zone. Daylight saving time is included, because the offset is
+    /// asked for a certain date and not for the time zone as a whole.
     /// </summary>
     /// <param name="date">The date to get the time zone offset from.</param>
     /// <returns>The time zone offset of the local time zone</returns>
     public static TimeSpan GetTimeZoneOffset(this DateTime date)
     {
-        return TimeZoneInfo.Local.IsDaylightSavingTime(date) ? TimeSpan.FromHours(2) : TimeSpan.FromHours(1);
+        return TimeZoneInfo.Local.GetUtcOffset(date);
     }
 }

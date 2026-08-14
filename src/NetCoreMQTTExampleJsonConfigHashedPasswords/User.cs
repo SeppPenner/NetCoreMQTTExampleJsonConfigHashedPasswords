@@ -25,9 +25,9 @@ public class User
     public string ClientId { get; set; } = string.Empty;
 
     /// <summary>
-    ///     Gets or sets the password.
+    ///     Gets or sets the hashed password. This is read from the config.json file, so it must not be ignored by the
+    ///     serializer, it is the only value the connection validation compares against.
     /// </summary>
-    [JsonIgnore]
     public string Password { get; set; } = string.Empty;
 
     /// <summary>
@@ -46,10 +46,12 @@ public class User
     /// </summary>
     public string ClientIdPrefix { get; set; } = string.Empty;
 
-    /// <summary> 
-    /// Gets or sets a value indicating whether the client id is validated or not. 
-    /// </summary> 
-    public bool ValidateClientId { get; set; }
+    /// <summary>
+    /// Gets or sets a value indicating whether the client id is validated or not. This defaults to <c>true</c>,
+    /// because the flag exists to switch the validation off for a user that may use every client id. A config.json
+    /// file that names a client id or a client id prefix expects that value to be checked.
+    /// </summary>
+    public bool ValidateClientId { get; set; } = true;
 
     /// <summary>
     /// Gets or sets a value indicating whether the user is throttled after a certain limit or not.

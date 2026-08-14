@@ -35,9 +35,10 @@ public sealed class Program
     private static readonly ILogger Logger = Log.ForContext<Program>();
 
     /// <summary>
-    /// The client identifiers.
+    /// The client identifiers that are currently connected. A concurrent collection because the MQTT server calls the
+    /// connection and disconnection handlers from more than one thread.
     /// </summary>
-    private static readonly HashSet<string> clientIds = new();
+    private static readonly ConcurrentDictionary<string, bool> clientIds = new();
 
     /// <summary>
     /// The configuration.
@@ -48,10 +49,11 @@ public sealed class Program
     ///     The main method that starts the service.
     /// </summary>
     /// <param name="args">Some arguments. Currently unused.</param>
-    public static void Main(string[] args)
+    /// <returns>A <see cref="Task"/> representing any asynchronous operation.</returns>
+    public static async Task Main(string[] args)
     {
         var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var certificate = new X509Certificate2(
+        var certificate = X509CertificateLoader.LoadPkcs12FromFile(
             Path.Combine(currentPath, "certificate.pfx"),
             "test",
             X509KeyStorageFlags.Exportable);
@@ -62,7 +64,7 @@ public sealed class Program
             .Enrich.WithExceptionDetails()
             .Enrich.WithMachineName()
             .WriteTo.File(
-                Path.Combine(currentPath, @"log\NetCoreMQTTExampleJsonConfigHashedPasswords_.txt"),
+                Path.Combine(currentPath, "log", "NetCoreMQTTExampleJsonConfigHashedPasswords_.txt"),
                 rollingInterval: RollingInterval.Day).CreateLogger();
 
         config = ReadConfiguration(currentPath);
@@ -82,8 +84,9 @@ public sealed class Program
         mqttServer.InterceptingSubscriptionAsync += InterceptSubscriptionAsync;
         mqttServer.InterceptingPublishAsync += InterceptApplicationMessagePublishAsync;
         mqttServer.ClientDisconnectedAsync += ClientDisconnectedAsync;
-        mqttServer.StartAsync();
+        await mqttServer.StartAsync();
         Console.ReadLine();
+        await mqttServer.StopAsync();
     }
 
     /// <summary>
@@ -97,10 +100,11 @@ public sealed class Program
             if (string.IsNullOrWhiteSpace(args.UserName))
             {
                 args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
+                LogMessage(args, false);
                 return Task.CompletedTask;
             }
 
-            if (clientIds.TryGetValue(args.ClientId, out var _))
+            if (clientIds.ContainsKey(args.ClientId))
             {
                 args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
                 Logger.Warning("A client with client id {ClientId} is already connected", args.ClientId);
@@ -112,14 +116,14 @@ public sealed class Program
             if (currentUser is null)
             {
                 args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                LogMessage(args, true);
+                LogMessage(args, false);
                 return Task.CompletedTask;
             }
 
             if (args.UserName != currentUser.UserName)
             {
                 args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                LogMessage(args, true);
+                LogMessage(args, false);
                 return Task.CompletedTask;
             }
 
@@ -128,15 +132,22 @@ public sealed class Program
             if (hashingResult == PasswordVerificationResult.Failed)
             {
                 args.ReasonCode = MqttConnectReasonCode.BadUserNameOrPassword;
-                LogMessage(args, true);
+                LogMessage(args, false);
                 return Task.CompletedTask;
             }
 
             if (!currentUser.ValidateClientId)
             {
+                if (!clientIds.TryAdd(args.ClientId, true))
+                {
+                    args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
+                    Logger.Warning("A client with client id {ClientId} is already connected", args.ClientId);
+                    return Task.CompletedTask;
+                }
+
                 args.ReasonCode = MqttConnectReasonCode.Success;
                 args.SessionItems.Add(args.ClientId, currentUser);
-                LogMessage(args, false);
+                LogMessage(args, true);
                 return Task.CompletedTask;
             }
 
@@ -145,7 +156,7 @@ public sealed class Program
                 if (args.ClientId != currentUser.ClientId)
                 {
                     args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
-                    LogMessage(args, true);
+                    LogMessage(args, false);
                     return Task.CompletedTask;
                 }
 
@@ -153,6 +164,13 @@ public sealed class Program
             }
             else
             {
+                if (!args.ClientId.StartsWith(currentUser.ClientIdPrefix, StringComparison.Ordinal))
+                {
+                    args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
+                    LogMessage(args, false);
+                    return Task.CompletedTask;
+                }
+
                 if (!ClientIdPrefixesUsed.Contains(currentUser.ClientIdPrefix))
                 {
                     ClientIdPrefixesUsed.Add(currentUser.ClientIdPrefix);
@@ -161,8 +179,15 @@ public sealed class Program
                 args.SessionItems.Add(currentUser.ClientIdPrefix, currentUser);
             }
 
+            if (!clientIds.TryAdd(args.ClientId, true))
+            {
+                args.ReasonCode = MqttConnectReasonCode.ClientIdentifierNotValid;
+                Logger.Warning("A client with client id {ClientId} is already connected", args.ClientId);
+                return Task.CompletedTask;
+            }
+
             args.ReasonCode = MqttConnectReasonCode.Success;
-            LogMessage(args, false);
+            LogMessage(args, true);
             return Task.CompletedTask;
         }
         catch (Exception ex)
@@ -355,13 +380,14 @@ public sealed class Program
     }
 
     /// <summary>
-    /// Handles the client connected event.
+    /// Handles the client disconnected event and frees the client identifier for the next connection.
     /// </summary>
     /// <param name="args">The arguments.</param>
-    private static async Task ClientDisconnectedAsync(ClientDisconnectedEventArgs args)
+    /// <returns>A <see cref="Task"/> representing any asynchronous operation.</returns>
+    private static Task ClientDisconnectedAsync(ClientDisconnectedEventArgs args)
     {
-        clientIds.Remove(args.ClientId);
-        await Task.Delay(1);
+        clientIds.TryRemove(args.ClientId, out _);
+        return Task.CompletedTask;
     }
 
     /// <summary>
@@ -437,7 +463,7 @@ public sealed class Program
     {
         var config = new Config();
 
-        var filePath = $"{currentPath}\\config.json";
+        var filePath = Path.Combine(currentPath, "config.json");
 
         if (!File.Exists(filePath))
         {
@@ -495,36 +521,28 @@ public sealed class Program
             args.ApplicationMessage?.Retain);
     }
 
-    /// <summary> 
-    ///     Logs the message from the MQTT connection validation context. 
-    /// </summary> 
+    /// <summary>
+    ///     Logs the message from the MQTT connection validation context. The password is never written to the log, a
+    ///     rejected client usually sends the password of a human being.
+    /// </summary>
     /// <param name="args">The arguments.</param>
-    /// <param name="showPassword">A <see cref="bool"/> value indicating whether the password is written to the log or not.</param> 
-    private static void LogMessage(ValidatingConnectionEventArgs args, bool showPassword)
+    /// <param name="successful">A <see cref="bool"/> value indicating whether the connection was successful or not.</param>
+    private static void LogMessage(ValidatingConnectionEventArgs args, bool successful)
     {
         if (args is null)
         {
             return;
         }
 
-        if (showPassword)
-        {
-            Logger.Information(
-                "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, Password = {@Password}, CleanSession = {@CleanSession}",
-                args.ClientId,
-                args.RemoteEndPoint,
-                args.UserName,
-                args.Password,
-                args.CleanSession);
-        }
-        else
-        {
-            Logger.Information(
-                "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, CleanSession = {@CleanSession}",
-                args.ClientId,
-                args.RemoteEndPoint,
-                args.UserName,
-                args.CleanSession);
-        }
+#pragma warning disable Serilog004 // Constant MessageTemplate verifier
+        Logger.Information(
+            successful
+                ? "New connection: ClientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, CleanSession = {@CleanSession}"
+                : "Connection failed for clientId = {@ClientId}, Endpoint = {@Endpoint}, Username = {@UserName}, CleanSession = {@CleanSession}",
+            args.ClientId,
+            args.RemoteEndPoint,
+            args.UserName,
+            args.CleanSession);
+#pragma warning restore Serilog004 // Constant MessageTemplate verifier
     }
 }
