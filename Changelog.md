@@ -1,5 +1,6 @@
 # Change history
 
+* **Version 1.0.13.0 (2026-08-14)** : Updated Nuget packages, moved to Net 10.0, fixed the certificate loading, fixed the password hash that was dropped while reading the configuration, fixed the client identifier and client identifier prefix validation, removed the plaintext passwords from the log, added tests.
 * **Version 1.0.12.0 (2025-01-07)** : Updated Nuget packages, added audit mode, moved to Net9.0.
 * **Version 1.0.11.0 (2024-01-04)** : Updated nuget packages, moved to Net 8.0.
 * **Version 1.0.10.0 (2022-11-23)** : Updated nuget packages, moved to Net 7.0.
