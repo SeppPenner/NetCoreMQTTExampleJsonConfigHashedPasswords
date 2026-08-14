@@ -175,6 +175,9 @@ Example:
 ```
 
 ## Attention
+* The client id is checked unless `ValidateClientId` is set to `false`. The exact definition then requires the `ClientId`, the various definition requires a client id that starts with the `ClientIdPrefix`.
+* Only one connection per client id is accepted. A second one is rejected with `ClientIdentifierNotValid` until the first one disconnects.
+* A subscription or a publish to a topic that is not allowed is dropped, but the client still receives a success reason code. The log file in the `log` folder next to the executable shows the real decision.
 * Only the following [UTF-8](https://www.utf8-chartable.de/unicode-utf8-table.pl) chars are supported for topics:
 
 |Unicode code point|character|UTF-8(hex.)|Name|
