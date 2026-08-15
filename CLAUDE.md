@@ -128,8 +128,10 @@ Do not silently "clean up" these, they are existing behaviour:
   When starting the executable from a script, keep the console of the calling process alive for as
   long as the broker is needed.
 - **The example certificate is committed.** `certificate.pfx`, `cert.pem` and `key.pem` are tracked
-  and their password is `test`, documented in the readme. `Main` exports the certificate to bytes
-  without a password and hands those to MQTTnet. This is an example, not a template for production.
+  and their password is `test`, documented in the readme. It is self signed, valid until 2036-12-31,
+  and the same three files ship in the sibling repositories `NetCoreMQTTExampleDapperConfig`,
+  `NetCoreMQTTExampleIdentityConfig` and `NetCoreMQTTExampleJsonConfig`, so replacing it here means
+  replacing it there as well. This is an example, not a template for production.
 - **The acknowledgement codes do not carry the decision.** The interceptors only set
   `ProcessSubscription` and `ProcessPublish`. A client that subscribes to a blacklisted topic still
   receives `GrantedQoS0`, a publish to a blacklisted topic still gets a success reason code. The

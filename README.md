@@ -380,11 +380,14 @@ Example:
 
 ## Create an openssl certificate
 ```bash
-openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 365
+openssl req -x509 -newkey rsa:4096 -keyout key.pem -out cert.pem -days 3650
 openssl pkcs12 -export -out certificate.pfx -inkey key.pem -in cert.pem
 ```
 
-An example certificate is in the folder. Password for all is `test`.
+An example certificate is in the folder, valid until 2036-12-31. Password for all is `test`. It is a
+throwaway certificate for local testing only. The same certificate ships in the sibling repositories
+NetCoreMQTTExampleDapperConfig, NetCoreMQTTExampleIdentityConfig and NetCoreMQTTExampleJsonConfig,
+so one trusted certificate covers all four examples.
 
 Change history
 --------------
