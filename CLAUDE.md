@@ -127,6 +127,13 @@ Do not silently "clean up" these, they are existing behaviour:
   closed standard input the call returns immediately, the broker stops a moment after it started.
   When starting the executable from a script, keep the console of the calling process alive for as
   long as the broker is needed.
+- **The certificate goes to MQTTnet as an object, never as exported bytes.**
+  `WithEncryptionCertificate` has an overload taking a `byte[]`, and `Main` used to call it with
+  `certificate.Export(X509ContentType.Pfx)`. The copy the server imports from that array has no
+  usable private key, so every TLS handshake failed with `CryptographicException` and no client
+  could reach the encrypted endpoint. Fixed in 1.0.14.0 by passing the `X509Certificate2` itself,
+  the same way the sibling repository `NetCoreMQTTExampleJsonConfig` does it. Do not reintroduce the
+  export.
 - **The example certificate is committed.** `certificate.pfx`, `cert.pem` and `key.pem` are tracked
   and their password is `test`, documented in the readme. It is self signed, valid until 2036-12-31,
   and the same three files ship in the sibling repositories `NetCoreMQTTExampleDapperConfig`,

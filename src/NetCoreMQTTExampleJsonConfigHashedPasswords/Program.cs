@@ -53,7 +53,7 @@ public sealed class Program
     public static async Task Main(string[] args)
     {
         var currentPath = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
-        var certificate = X509CertificateLoader.LoadPkcs12FromFile(
+        using var certificate = X509CertificateLoader.LoadPkcs12FromFile(
             Path.Combine(currentPath, "certificate.pfx"),
             "test",
             X509KeyStorageFlags.Exportable);
@@ -76,7 +76,9 @@ public sealed class Program
             .WithoutDefaultEndpoint()
 #endif
             .WithEncryptedEndpoint().WithEncryptedEndpointPort(config.Port)
-            .WithEncryptionCertificate(certificate.Export(X509ContentType.Pfx))
+            // The certificate is handed over as it is. Exporting it to a PFX byte array and letting the server import
+            // that copy again loses the private key, which makes every TLS handshake fail with a CryptographicException.
+            .WithEncryptionCertificate(certificate)
             .WithEncryptionSslProtocol(SslProtocols.Tls12);
 
         var mqttServer = new MqttServerFactory().CreateMqttServer(optionsBuilder.Build());
