@@ -1,5 +1,6 @@
 # Change history
 
+* **Version 1.0.14.0 (2026-08-15)** : Fixed the TLS endpoint by handing the certificate to MQTTnet as an object instead of as exported bytes, renewed the expired example certificate (now the same one in all four MQTT example repositories, valid until 2036-12-31).
 * **Version 1.0.13.0 (2026-08-14)** : Updated Nuget packages, moved to Net 10.0, fixed the certificate loading, fixed the password hash that was dropped while reading the configuration, fixed the client identifier and client identifier prefix validation, removed the plaintext passwords from the log, added tests.
 * **Version 1.0.12.0 (2025-01-07)** : Updated Nuget packages, added audit mode, moved to Net9.0.
 * **Version 1.0.11.0 (2024-01-04)** : Updated nuget packages, moved to Net 8.0.
